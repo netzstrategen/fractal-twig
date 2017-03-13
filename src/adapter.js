@@ -22,19 +22,18 @@ class TwigAdapter extends Fractal.Adapter {
              */
 
             Twig.Templates.registerLoader('fractal', function(location, params, callback, errorCallback) {
-
-                let parser = Twig.Templates.parsers['twig'];
-
                 if (params.precompiled) {
                     params.data = params.precompiled;
-                } else {
-                    let view = isHandle(location) ? self.getView(location) : _.find(self.views, {path: Path.join(source.fullPath, location)});
-                    if (!view) {
-
-                        throw new Error(`Template ${location} not found`);
-                    }
-                    params.data = view.content;
+                    return new Twig.Template(params);
                 }
+
+                let view = findView(location, source.fullPath);
+
+                if (!view) {
+                    throw new Error(`Template ${location} not found`);
+                }
+
+                params.data = view.content;
 
                 return new Twig.Template(params);
             });
@@ -122,7 +121,45 @@ class TwigAdapter extends Fractal.Adapter {
         function isHandle(str) {
             return str && str.startsWith(self._config.handlePrefix);
         }
+
+        function _preparePaths(location, sourcePath) {
+            let basename = Path.basename(location);
+            let paths = [];
+            // @custom-twig
+            paths.push(location);
+            // path/to/file.twig => absolute/path/to/file.twig
+            paths.push(Path.join(sourcePath, location));
+            // @handle/path/to/file.twig => absolute/path/to/file.twig
+            paths.push(Path.join(sourcePath, location.replace(self._config.handlePrefix, '')));
+            // @handle/to/collection => absolute/path/to/collection/collection.twig
+            paths.push(Path.join(sourcePath, location.replace(self._config.handlePrefix, ''), basename + '.twig'));
+
+            return paths;
+        }
+
+        function findView(location, sourcePath) {
+            let prefixMatcher = new RegExp(`^\\${self._config._handlePrefix}`);
+            let paths = _preparePaths(location, sourcePath, prefixMatcher);
+            let view;
+
+            for (let i = 0; i < paths.length; i++) {
+                view = _.find(self.views, function (view) {
+                    if (view.handle.replace(prefixMatcher, '') === paths[i].replace(prefixMatcher, '')) {
+                        return true;
+                    }
+
+                    return view.path === paths[i];
+                });
+
+                if (view) {
+                    return view;
+                }
+            }
+
+            return view;
+        }
     }
+
 
     get twig() {
         return this._engine;
