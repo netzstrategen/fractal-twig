@@ -125,11 +125,13 @@ class TwigAdapter extends Fractal.Adapter {
         function _preparePaths(location, sourcePath) {
             let basename = Path.basename(location);
             let paths = [];
-            // @custom-twig
+            // @handle/custom-twig
             paths.push(location);
-            // path/to/file.twig => absolute/path/to/file.twig
+            // @handle/custom-twig/collection--variant => @handle/collection--variant
+            paths.push(self._config.handlePrefix + basename);
+            // path/to/custom-twig.twig
             paths.push(Path.join(sourcePath, location));
-            // @handle/path/to/file.twig => absolute/path/to/file.twig
+            // @handle/onto/path/to/file.twig => absolute/path/to/file.twig
             paths.push(Path.join(sourcePath, location.replace(self._config.handlePrefix, '')));
             // @handle/to/collection => absolute/path/to/collection/collection.twig
             paths.push(Path.join(sourcePath, location.replace(self._config.handlePrefix, ''), basename + '.twig'));
@@ -138,13 +140,12 @@ class TwigAdapter extends Fractal.Adapter {
         }
 
         function findView(location, sourcePath) {
-            let prefixMatcher = new RegExp(`^\\${self._config._handlePrefix}`);
-            let paths = _preparePaths(location, sourcePath, prefixMatcher);
+            let paths = _preparePaths(location, sourcePath);
             let view;
 
             for (let i = 0; i < paths.length; i++) {
                 view = _.find(self.views, function (view) {
-                    if (view.handle.replace(prefixMatcher, '') === paths[i].replace(prefixMatcher, '')) {
+                    if (view.handle === paths[i]) {
                         return true;
                     }
 
