@@ -167,16 +167,59 @@ class TwigAdapter extends Fractal.Adapter {
     }
 
     render(path, str, context, meta) {
-
+        let attributes = new AttributesObject();
         let self = this;
 
         meta = meta || {};
+
+        function AttributesObject() {
+            let self = this;
+            this.classes = 'asdasd';
+            this.attr = [];
+
+            this.addClass = function(...str) {
+                // console.log(str);
+                self.classes = _.flatten(str).join(' ');
+
+                return self;
+            };
+
+            this.removeClass = function(...str) {
+                // todo implement
+                // self.classes = str.join(' ');
+
+                return self;
+            };
+
+            this.setAttribute = function(attribute, value) {
+                let str = `${attribute}="${value}"`;
+
+                self.attr.push(str);
+                self.attr = _.uniq(self.attr);
+
+                return self;
+            };
+        }
+
+        AttributesObject.prototype.toString = function toString() {
+            let attrList = [
+                this.classes ? `class="${this.classes}"`:'',
+                this.attr ? this.attr.join(' ') : '',
+            ];
+
+            return attrList.join(' ');
+        };
+
+
 
         if (!this._config.pristine) {
             setEnv('_self', meta.self, context);
             setEnv('_target', meta.target, context);
             setEnv('_env', meta.env, context);
             setEnv('_config', this._app.config(), context);
+            setEnv('title_prefix', '', context);
+            setEnv('title_suffix', '', context);
+            setEnv('attributes', attributes, context);
         }
 
         return new Promise(function(resolve, reject){
