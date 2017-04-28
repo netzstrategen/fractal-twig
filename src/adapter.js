@@ -2,6 +2,7 @@
 
 const Fractal = require('@frctl/fractal');
 const _ = require('lodash');
+const fs = require('fs');
 const Path = require('path');
 const utils = Fractal.utils;
 
