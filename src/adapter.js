@@ -157,6 +157,15 @@ class TwigAdapter extends Fractal.Adapter {
                 }
             }
 
+            // include plain files like svg
+            for (let i = 0; i < paths.length; i++) {
+                if (fs.existsSync(paths[i])) {
+                    view = {
+                        'content': fs.readFileSync(paths[i], 'utf8')
+                    };
+                }
+            }
+
             return view;
         }
     }
