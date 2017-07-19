@@ -4,6 +4,8 @@ const Fractal = require('@frctl/fractal');
 const _ = require('lodash');
 const fs = require('fs');
 const Path = require('path');
+const yaml = require('js-yaml');
+const glob = require('glob');
 const utils = Fractal.utils;
 
 class TwigAdapter extends Fractal.Adapter {
@@ -123,19 +125,49 @@ class TwigAdapter extends Fractal.Adapter {
             return str && str.startsWith(self._config.handlePrefix);
         }
 
+        /**
+         * Returns the component-libraries configuration from the theme info file.
+         */
+        function getComponentLibraries() {
+            try {
+                let doc = yaml.safeLoad(fs.readFileSync(glob.sync('*.info.yml').toString()));
+                let libraries = doc['component-libraries'];
+
+                return libraries;
+            }
+            catch (e) {
+                throw new Error(e);
+            }
+        }
+
+        /**
+         * Returns the file template paths while respecting the registered
+         * component-libraries handles.
+         */
         function _preparePaths(location, sourcePath) {
+            let libraries = getComponentLibraries();
             let basename = Path.basename(location);
             let paths = [];
-            // @handle/custom-twig
-            paths.push(location);
-            // @handle/custom-twig/collection--variant => @handle/collection--variant
-            paths.push(self._config.handlePrefix + basename);
-            // path/to/custom-twig.twig
-            paths.push(Path.join(sourcePath, location));
-            // @handle/onto/path/to/file.twig => absolute/path/to/file.twig
-            paths.push(Path.join(sourcePath, location.replace(self._config.handlePrefix, '')));
-            // @handle/to/collection => absolute/path/to/collection/collection.twig
-            paths.push(Path.join(sourcePath, location.replace(self._config.handlePrefix, ''), basename + '.twig'));
+
+            if (!libraries) {
+              throw new Error('Component libraries could not be found.');
+            }
+            for (let library in libraries) {
+                let name = self._config.handlePrefix + library;
+                let path = libraries[library].paths[0];
+                sourcePath = sourcePath.replace(Path.dirname(path), '');
+
+                // @handle/custom-twig
+                paths.push(location);
+                // @handle/custom-twig/collection--variant => @handle/collection--variant
+                paths.push(name + '/' + basename);
+                // path/to/custom-twig.twig
+                paths.push(Path.join(sourcePath, location));
+                // @handle/onto/path/to/file.twig => absolute/path/to/file.twig
+                paths.push(Path.join(sourcePath, location.replace(name, path)));
+                // @handle/to/collection => absolute/path/to/collection/collection.twig
+                paths.push(Path.join(sourcePath, location.replace(name, ''), basename + '.twig'));
+            }
 
             return paths;
         }
