@@ -1,5 +1,9 @@
 'use strict';
 
+const fractal = require('@frctl/fractal');
+const Path = require('path');
+const adapter = require('./../adapter');
+
 module.exports = function(fractal){
 
     return {
@@ -45,6 +49,12 @@ module.exports = function(fractal){
                     return token;
                 },
                 parse: function (token, context, chain) {
+                    let components = fractal.components;
+                    let handle = Path.parse(token.stack[0].value).name;
+                    if (handle.indexOf('@') !== 0) {
+                        handle = '@' + handle;
+                    }
+
                     // Resolve filename
                     var innerContext = {},
                       withContext,
@@ -53,6 +63,13 @@ module.exports = function(fractal){
 
                     if (!token.only) {
                         innerContext = Twig.ChildContext(context);
+                    }
+                    else {
+                        const entity = components.find(handle);
+                        if (!entity) {
+                            throw new Error(`Could not render component '${handle}' - component not found.`);
+                        }
+                        innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
                     }
 
                     if (token.withStack !== undefined) {

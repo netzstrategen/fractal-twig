@@ -146,17 +146,24 @@ class TwigAdapter extends Fractal.Adapter {
          */
         function _preparePaths(location, sourcePath) {
             let libraries = getComponentLibraries();
-            let basename = Path.basename(location);
+            let basename = Path.parse(location).name;
+            let handle = basename;
+            let handlePrefix = self._config.handlePrefix;
             let paths = [];
+
+            if (basename.indexOf(handlePrefix) !== 0) {
+                handle = handlePrefix + basename;
+            }
 
             if (!libraries) {
               throw new Error('Component libraries could not be found.');
             }
             for (let library in libraries) {
-                let name = self._config.handlePrefix + library;
+                let name = handlePrefix + library;
                 let path = libraries[library].paths[0];
                 sourcePath = sourcePath.replace(Path.dirname(path), '');
-
+                // @handle
+                paths.push(handle);
                 // @handle/custom-twig
                 paths.push(location);
                 // @handle/custom-twig/collection--variant => @handle/collection--variant
