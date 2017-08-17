@@ -7,15 +7,15 @@ const adapter = require('./../adapter');
 module.exports = function(fractal){
 
     return {
-        include(Twig) {
+        render(Twig) {
             return {
                 /**
                  * Block logic tokens.
                  *
-                 *  Format: {% includes "template.twig" [with {some: 'values'} only] %}
+                 *  Format: {% render "template.twig" with {some: 'values'} %}
                  */
                 type: Twig.logic.type.include,
-                regex: /^include\s+(ignore missing\s+)?(.+?)\s*(?:with\s+([\S\s]+?))?\s*(only)?$/,
+                regex: /^render\s+(ignore missing\s+)?(.+?)\s*(?:with\s+([\S\s]+?))?\s*(only)?$/,
                 next: [],
                 open: true,
                 compile: function (token) {
@@ -23,7 +23,7 @@ module.exports = function(fractal){
                       includeMissing = match[1] !== undefined,
                       expression = match[2].trim(),
                       withContext = match[3],
-                      only = ((match[4] !== undefined) && match[4].length);
+                      only = true;
 
                     delete token.match;
 
