@@ -1,6 +1,7 @@
 'use strict';
 
 const fractal = require('@frctl/fractal');
+const _ = require('lodash');
 const Path = require('path');
 const adapter = require('./../adapter');
 
@@ -95,6 +96,59 @@ module.exports = function(fractal){
                     else {
                         // Import file
                         template = this.importFile(file);
+                    }
+
+                    // Duplicate of the adapter's render() function to render the attributes.
+                    // @see adapter().render()
+                    // @todo Figure out how to reuse function
+                    let attributes = new AttributesObject();
+                    innerContext.attributes = attributes;
+
+                    function AttributesObject() {
+                        let self = this;
+                        this.classes = [];
+                        this.attr = [];
+
+                        this.addClass = function(...str) {
+                            // console.log(str);
+                            self.classes = _.flatten(str).join(' ');
+
+                            return self;
+                        };
+
+                        this.removeClass = function(...str) {
+                            // todo implement
+                            // self.classes = str.join(' ');
+
+                            return self;
+                        };
+
+                        this.setAttribute = function(attribute, value) {
+                            let str = `${attribute}="${value}"`;
+
+                            self.attr.push(str);
+                            self.attr = _.uniq(self.attr);
+
+                            return self;
+                        };
+                    }
+
+                    AttributesObject.prototype.toString = function toString() {
+                        let attrList = [
+                            this.classes ? `class="${this.classes}"`:'',
+                            this.attr ? this.attr.join(' ') : '',
+                        ];
+
+                        if (innerContext.attr) {
+                            Object.entries(innerContext.attr).forEach(([name, value]) => {
+                                let attribute = [name];
+                                if (value) {
+                                    attribute.push(`"${value}"`);
+                                }
+                                attrList.push(attribute.join('='));
+                            });
+                        }
+                        return attrList.join(' ');
                     }
 
                     return {
