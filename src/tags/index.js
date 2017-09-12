@@ -51,7 +51,11 @@ module.exports = function(fractal){
                 },
                 parse: function (token, context, chain) {
                     let components = fractal.components;
-                    let handle = Path.parse(token.stack[0].value).name;
+                    let file = Twig.expression.parse.apply(this, [
+                        token.stack,
+                        context
+                    ]);
+                    let handle = Path.parse(file).name;
                     if (handle.indexOf('@') !== 0) {
                         handle = '@' + handle;
                     }
@@ -84,11 +88,6 @@ module.exports = function(fractal){
                                 innerContext[i] = withContext[i];
                         }
                     }
-
-                    var file = Twig.expression.parse.apply(this, [
-                        token.stack,
-                        innerContext
-                    ]);
 
                     if (file instanceof Twig.Template) {
                         template = file;
