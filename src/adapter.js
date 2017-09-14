@@ -216,6 +216,8 @@ class TwigAdapter extends Fractal.Adapter {
     }
 
     render(path, str, context, meta) {
+        let contextAttributes = context.attributes;
+        delete(context.attributes);
         let attributes = new AttributesObject();
         let self = this;
 
@@ -223,8 +225,7 @@ class TwigAdapter extends Fractal.Adapter {
 
         function AttributesObject() {
             let self = this;
-            let classes = context.class ? context.class : '';
-            this.classes = [classes];
+            this.classes = [];
             this.attr = [];
 
             this.addClass = function(...str) {
@@ -251,25 +252,27 @@ class TwigAdapter extends Fractal.Adapter {
         }
 
         AttributesObject.prototype.toString = function toString() {
+            if (contextAttributes) {
+                Object.entries(contextAttributes).forEach(([name, value]) => {
+                    if (name === 'class') {
+                        this.classes.push(value);
+                    }
+                    else {
+                        let attribute = [name];
+                        if (value) {
+                          attribute.push(`"${value}"`);
+                        }
+                        this.attr.push(attribute.join('='));
+                    }
+                });
+            }
             this.classes = _.compact(_.uniq(this.classes));
             let attrList = [
                 this.classes.length ? `class="${this.classes.join(' ')}"` : '',
                 this.attr ? this.attr.join(' ') : '',
             ];
-
-            if (meta.self.context.attr) {
-                Object.entries(meta.self.context.attr).forEach(([name, value]) => {
-                    let attribute = [name];
-                    if (value) {
-                        attribute.push(`"${value}"`);
-                    }
-                    attrList.push(attribute.join('='));
-                });
-            }
             return attrList.join(' ');
         };
-
-
 
         if (!this._config.pristine) {
             setEnv('_self', meta.self, context);

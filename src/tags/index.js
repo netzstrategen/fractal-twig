@@ -101,12 +101,13 @@ module.exports = function(fractal){
                     // @see adapter().render()
                     // @todo Figure out how to reuse function
                     let attributes = new AttributesObject();
+                    let contextAttributes = innerContext.attributes;
+                    delete(innerContext.attributes);
                     innerContext.attributes = attributes;
 
                     function AttributesObject() {
                         let self = this;
-                        let classes = innerContext.class ? innerContext.class : '';
-                        this.classes = [classes];
+                        this.classes = [];
                         this.attr = [];
 
                         this.addClass = function(...str) {
@@ -133,21 +134,25 @@ module.exports = function(fractal){
                     }
 
                     AttributesObject.prototype.toString = function toString() {
+                        if (contextAttributes) {
+                            Object.entries(contextAttributes).forEach(([name, value]) => {
+                                if (name === 'class') {
+                                    this.classes.push(value);
+                                }
+                                else {
+                                    let attribute = [name];
+                                    if (value) {
+                                        attribute.push(`"${value}"`);
+                                    }
+                                    this.attr.push(attribute.join('='));
+                                }
+                            });
+                        }
                         this.classes = _.compact(_.uniq(this.classes));
                         let attrList = [
                             this.classes.length ? `class="${this.classes.join(' ')}"` : '',
                             this.attr ? this.attr.join(' ') : '',
                         ];
-
-                        if (innerContext.attr) {
-                            Object.entries(innerContext.attr).forEach(([name, value]) => {
-                                let attribute = [name];
-                                if (value) {
-                                    attribute.push(`"${value}"`);
-                                }
-                                attrList.push(attribute.join('='));
-                            });
-                        }
                         return attrList.join(' ');
                     }
 
