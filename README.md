@@ -2,14 +2,26 @@
 
 This fork allows you to use the namespaces from your `theme.info.yml` file from the `component-libraries` key in your Fractal instance.
 
-## How to Setup
- 
-in your `package.json` 
+## Requirements & Usage
+
+Use with the [Fractal integration module for Drupal](https://github.com/netzstrategen/drupal-twig_fractal):
+
+```sh
+composer require netzstrategen/drupal-twig_fractal
+```
+
+## Setup
+
+```sh
+npm install --save git+ssh://git@github.com/netzstrategen/twig-drupal.git
+```
+
+or add manually in your `package.json`:
 
 ```json
 {
   "dependencies": {
-    "@frctl/twig-drupal": "https://github.com/netzstrategen/twig-drupal.git",
+    "@frctl/twig-drupal": "git+ssh://git@github.com/netzstrategen/twig-drupal.git"
   }
 }
 ```
@@ -22,8 +34,5 @@ const twigAdapter = require('@frctl/twig-drupal');
 fractal.components.engine(twigAdapter);
 ```
 
-## Todo
-- [ ] Allow multiple paths per namespace
-
 ## Credits
-This fork is based on the fork of [WONDROUS](https://github.com/WondrousLLC/twig-drupal).
+This package is based on the work of https://github.com/WondrousLLC/twig-drupal
