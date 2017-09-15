@@ -216,72 +216,75 @@ class TwigAdapter extends Fractal.Adapter {
     }
 
     render(path, str, context, meta) {
-        let contextAttributes = context.attributes;
-        delete(context.attributes);
-        let attributes = new AttributesObject();
+        // @todo Duplicate of function in render tag; move into shared dependency.
+        class AttributesObject {
+            constructor(attributes) {
+                this.classes = [];
+                this.storage = {};
+                if (attributes !== undefined) {
+                    this.merge(attributes);
+                }
+            }
+
+            addClass(...classnames) {
+                this.classes = _.concat(this.classes, classnames);
+                return this;
+            };
+
+            removeClass(...classnames) {
+                _.pullAll(this.classes, classnames);
+                return this;
+            };
+
+            setAttribute(name, value) {
+                this.storage[name] = value;
+                return this;
+            };
+
+            merge(attributes) {
+                let self = this;
+                // Matches both this class and the function prototype in the
+                // render tag.
+                if (attributes.constructor.name === 'AttributesObject') {
+                    this.classes = _.concat(this.classes, attributes.classes);
+                    _.merge(this.storage, attributes.storage);
+                }
+                else {
+                    _.forEach(attributes, function (value, name) {
+                        if (name === 'class') {
+                            if (typeof value === 'string') {
+                                value = value.split(' ');
+                            }
+                            self.addClass(value);
+                        }
+                        else {
+                            self.setAttribute(name, value);
+                        }
+                    });
+                }
+                return this;
+            };
+
+        }
+        AttributesObject.prototype.toString = function () {
+            let string = ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
+            _.forEach(this.storage, function (value, name) {
+                string += ` ${name}="${value}"`;
+            });
+            return string;
+        };
+
+        context.attributes = new AttributesObject(context.attributes);
+
         let self = this;
 
         meta = meta || {};
-
-        function AttributesObject() {
-            let self = this;
-            this.classes = [];
-            this.attr = [];
-
-            this.addClass = function(...str) {
-                // Merge existing with new classes.
-                self.classes = self.classes.concat(_.flatten(str));
-                return self;
-            };
-
-            this.removeClass = function(...str) {
-                // todo implement
-                // self.classes = str.join(' ');
-
-                return self;
-            };
-
-            this.setAttribute = function(attribute, value) {
-                let str = `${attribute}="${value}"`;
-
-                self.attr.push(str);
-                self.attr = _.uniq(self.attr);
-
-                return self;
-            };
-        }
-
-        AttributesObject.prototype.toString = function toString() {
-            if (contextAttributes) {
-                Object.entries(contextAttributes).forEach(([name, value]) => {
-                    if (name === 'class') {
-                        this.classes.push(value);
-                    }
-                    else {
-                        let attribute = [name];
-                        if (value) {
-                          attribute.push(`"${value}"`);
-                        }
-                        this.attr.push(attribute.join('='));
-                    }
-                });
-            }
-            this.classes = _.compact(_.uniq(this.classes));
-            let attrList = [
-                this.classes.length ? `class="${this.classes.join(' ')}"` : '',
-                this.attr ? this.attr.join(' ') : '',
-            ];
-            return attrList.join(' ');
-        };
 
         if (!this._config.pristine) {
             setEnv('_self', meta.self, context);
             setEnv('_target', meta.target, context);
             setEnv('_env', meta.env, context);
             setEnv('_config', this._app.config(), context);
-            setEnv('title_prefix', '', context);
-            setEnv('title_suffix', '', context);
-            setEnv('attributes', attributes, context);
         }
 
         return new Promise(function(resolve, reject){

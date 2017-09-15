@@ -9,6 +9,70 @@ module.exports = function(fractal){
 
     return {
         render(Twig) {
+            // @todo Duplicate of class in adapter; move into shared dependency.
+            function AttributesObject(initialAttributes) {
+                let self = this;
+                this.classes = [];
+                this.storage = {};
+
+                this.addClass = function (...classnames) {
+                    self.classes = _.concat(self.classes, classnames);
+                    return self;
+                };
+
+                this.removeClass = function (...classnames) {
+                    _.pullAll(self.classes, classnames);
+                    return self;
+                };
+
+                this.setAttribute = function (name, value) {
+                    self.storage[name] = value;
+                    return self;
+                };
+
+                this.merge = function (attributes) {
+                    // Matches both this function prototype and the class in the
+                    // main adapter.
+                    if (attributes.constructor && attributes.constructor.name === 'AttributesObject') {
+                        self.classes = _.concat(self.classes, attributes.classes);
+                        _.merge(self.storage, attributes.storage);
+                    }
+                    else {
+                        _.forEach(attributes, function (value, name) {
+                            // The interactive web server picks up the internal
+                            // _keys property in context data that is regenerated
+                            // by adapter().render().setKeys().
+                            // (The build/export does not expose this gem.)
+                            if (name === '_keys') {
+                                return;
+                            }
+                            if (name === 'class') {
+                                if (typeof value === 'string') {
+                                    value = value.split(' ');
+                                }
+                                self.addClass(value);
+                            }
+                            else {
+                                self.setAttribute(name, value);
+                            }
+                        });
+                    }
+                    return self;
+                };
+
+                // Constructor.
+                if (initialAttributes !== undefined) {
+                    self.merge(initialAttributes);
+                }
+            }
+            AttributesObject.prototype.toString = function () {
+                let string = ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
+                _.forEach(this.storage, function (value, name) {
+                    string += ` ${name}="${value}"`;
+                });
+                return string;
+            };
+
             return {
                 /**
                  * Block logic tokens.
@@ -19,11 +83,12 @@ module.exports = function(fractal){
                 regex: /^render\s+(ignore missing\s+)?(.+?)\s*(?:with\s+([\S\s]+?))?\s*(only)?$/,
                 next: [],
                 open: true,
+
                 compile: function (token) {
                     var match = token.match,
                       includeMissing = match[1] !== undefined,
                       expression = match[2].trim(),
-                      withContext = match[3],
+                      passedArguments = match[3],
                       only = true;
 
                     delete token.match;
@@ -38,23 +103,22 @@ module.exports = function(fractal){
                         }
                     ]).stack;
 
-                    if (withContext !== undefined) {
+                    if (passedArguments !== undefined) {
                         token.withStack = Twig.expression.compile.apply(this, [
                             {
                                 type: Twig.expression.type.expression,
-                                value: withContext.trim()
+                                value: passedArguments.trim()
                             }
                         ]).stack;
                     }
 
                     return token;
                 },
+
                 parse: function (token, context, chain) {
                     let components = fractal.components;
-                    let file = Twig.expression.parse.apply(this, [
-                        token.stack,
-                        context
-                    ]);
+
+                    let file = Twig.expression.parse.apply(this, [token.stack, context]);
                     let handle = Path.parse(file).name;
                     if (handle.indexOf('@') !== 0) {
                         handle = '@' + handle;
@@ -62,7 +126,7 @@ module.exports = function(fractal){
 
                     // Resolve filename
                     var innerContext = {},
-                      withContext,
+                      passedArguments,
                       i,
                       template;
 
@@ -72,88 +136,36 @@ module.exports = function(fractal){
                     else {
                         const entity = components.find(handle);
                         if (!entity) {
-                            throw new Error(`Could not render component '${handle}' - component not found.`);
+                            throw new Error(`Unable to render '${handle}' - component not found.`);
                         }
                         innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
                     }
 
-                    if (token.withStack !== undefined) {
-                        withContext = Twig.expression.parse.apply(this, [
-                            token.withStack,
-                            context
-                        ]);
+                    innerContext.attributes = new AttributesObject(innerContext.attributes);
 
-                        for (i in withContext) {
-                            if (withContext.hasOwnProperty(i))
-                                innerContext[i] = withContext[i];
-                        }
+                    if (token.withStack !== undefined) {
+                        passedArguments = Twig.expression.parse.apply(this, [token.withStack, context]);
+
+                        _.forEach(passedArguments, function (value, name) {
+                            // It makes no sense to pass variables that are not
+                            // supported by the component.
+                            if (innerContext[name] === undefined) {
+                                return;
+                            }
+                            if (name === 'attributes') {
+                                innerContext.attributes.merge(value);
+                            }
+                            else {
+                                innerContext[name] = value;
+                            }
+                        });
                     }
 
                     if (file instanceof Twig.Template) {
                         template = file;
                     }
                     else {
-                        // Import file
                         template = this.importFile(file);
-                    }
-
-                    // Duplicate of the adapter's render() function to render the attributes.
-                    // @see adapter().render()
-                    // @todo Figure out how to reuse function
-                    let attributes = new AttributesObject();
-                    let contextAttributes = innerContext.attributes;
-                    delete(innerContext.attributes);
-                    innerContext.attributes = attributes;
-
-                    function AttributesObject() {
-                        let self = this;
-                        this.classes = [];
-                        this.attr = [];
-
-                        this.addClass = function(...str) {
-                            // Merge existing with new classes.
-                            self.classes = self.classes.concat(_.flatten(str));
-                            return self;
-                        };
-
-                        this.removeClass = function(...str) {
-                            // todo implement
-                            // self.classes = str.join(' ');
-
-                            return self;
-                        };
-
-                        this.setAttribute = function(attribute, value) {
-                            let str = `${attribute}="${value}"`;
-
-                            self.attr.push(str);
-                            self.attr = _.uniq(self.attr);
-
-                            return self;
-                        };
-                    }
-
-                    AttributesObject.prototype.toString = function toString() {
-                        if (contextAttributes) {
-                            Object.entries(contextAttributes).forEach(([name, value]) => {
-                                if (name === 'class') {
-                                    this.classes.push(value);
-                                }
-                                else {
-                                    let attribute = [name];
-                                    if (value) {
-                                        attribute.push(`"${value}"`);
-                                    }
-                                    this.attr.push(attribute.join('='));
-                                }
-                            });
-                        }
-                        this.classes = _.compact(_.uniq(this.classes));
-                        let attrList = [
-                            this.classes.length ? `class="${this.classes.join(' ')}"` : '',
-                            this.attr ? this.attr.join(' ') : '',
-                        ];
-                        return attrList.join(' ');
                     }
 
                     return {
