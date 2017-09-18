@@ -66,27 +66,66 @@ module.exports = function(fractal){
                       i,
                       template;
 
+                        const entity = components.find(handle);
                     if (!token.only) {
                         innerContext = Twig.ChildContext(context);
                     }
                     else {
-                        const entity = components.find(handle);
                         if (!entity) {
                             throw new Error(`Could not render component '${handle}' - component not found.`);
                         }
                         innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
                     }
+                    let s = innerContext;
 
                     if (token.withStack !== undefined) {
                         withContext = Twig.expression.parse.apply(this, [
                             token.withStack,
                             context
                         ]);
+                        console.log(withContext);
 
                         for (i in withContext) {
                             if (withContext.hasOwnProperty(i))
                                 innerContext[i] = withContext[i];
                         }
+                    }
+                    if (!withContext.attributes) {
+                      // Duplicate of the adapter's render() function to render the attributes.
+                      // @see adapter().render()
+                      // @todo Figure out how to reuse function
+                      let attributes = new AttributesObject();
+                      let contextAttributes = innerContext.attributes;
+                      delete(innerContext.attributes);
+                      innerContext.attributes = attributes;
+
+                      function AttributesObject() {
+                        let self = this;
+                        this.classes = [];
+                        this.attr = [];
+
+                        this.addClass = function(...str) {
+                          // Merge existing with new classes.
+                          self.classes = self.classes.concat(_.flatten(str));
+                          return self;
+                        };
+
+                        this.removeClass = function(...str) {
+                          // todo implement
+                          // self.classes = str.join(' ');
+
+                          return self;
+                        };
+
+                        this.setAttribute = function(attribute, value) {
+                          let str = `${attribute}="${value}"`;
+
+                          self.attr.push(str);
+                          self.attr = _.uniq(self.attr);
+
+                          return self;
+                        };
+                      }
                     }
 
                     if (file instanceof Twig.Template) {
@@ -97,41 +136,6 @@ module.exports = function(fractal){
                         template = this.importFile(file);
                     }
 
-                    // Duplicate of the adapter's render() function to render the attributes.
-                    // @see adapter().render()
-                    // @todo Figure out how to reuse function
-                    let attributes = new AttributesObject();
-                    let contextAttributes = innerContext.attributes;
-                    delete(innerContext.attributes);
-                    innerContext.attributes = attributes;
-
-                    function AttributesObject() {
-                        let self = this;
-                        this.classes = [];
-                        this.attr = [];
-
-                        this.addClass = function(...str) {
-                            // Merge existing with new classes.
-                            self.classes = self.classes.concat(_.flatten(str));
-                            return self;
-                        };
-
-                        this.removeClass = function(...str) {
-                            // todo implement
-                            // self.classes = str.join(' ');
-
-                            return self;
-                        };
-
-                        this.setAttribute = function(attribute, value) {
-                            let str = `${attribute}="${value}"`;
-
-                            self.attr.push(str);
-                            self.attr = _.uniq(self.attr);
-
-                            return self;
-                        };
-                    }
 
                     AttributesObject.prototype.toString = function toString() {
                         if (contextAttributes) {
