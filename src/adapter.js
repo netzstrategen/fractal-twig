@@ -7,6 +7,7 @@ const Path = require('path');
 const yaml = require('js-yaml');
 const glob = require('glob');
 const utils = Fractal.utils;
+const Attributes = require('./attributes');
 
 class TwigAdapter extends Fractal.Adapter {
 
@@ -216,65 +217,11 @@ class TwigAdapter extends Fractal.Adapter {
     }
 
     render(path, str, context, meta) {
-        // @todo Duplicate of function in render tag; move into shared dependency.
-        class AttributesObject {
-            constructor(attributes) {
-                this.classes = [];
-                this.storage = {};
-                if (attributes !== undefined) {
-                    this.merge(attributes);
-                }
-            }
-
-            addClass(...classnames) {
-                this.classes = _.concat(this.classes, classnames);
-                return this;
-            };
-
-            removeClass(...classnames) {
-                _.pullAll(this.classes, classnames);
-                return this;
-            };
-
-            setAttribute(name, value) {
-                this.storage[name] = value;
-                return this;
-            };
-
-            merge(attributes) {
-                let self = this;
-                // Matches both this class and the function prototype in the
-                // render tag.
-                if (attributes.constructor.name === 'AttributesObject') {
-                    this.classes = _.concat(this.classes, attributes.classes);
-                    _.merge(this.storage, attributes.storage);
-                }
-                else {
-                    _.forEach(attributes, function (value, name) {
-                        if (name === 'class') {
-                            if (typeof value === 'string') {
-                                value = value.split(' ');
-                            }
-                            self.addClass(value);
-                        }
-                        else {
-                            self.setAttribute(name, value);
-                        }
-                    });
-                }
-                return this;
-            };
-
-        }
-        AttributesObject.prototype.toString = function () {
-            let string = ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
-            _.forEach(this.storage, function (value, name) {
-                string += ` ${name}="${value}"`;
-            });
-            return string;
-        };
-
-        context.attributes = new AttributesObject(context.attributes);
+        _.forEach(context, function (value, name) {
+          if (name.indexOf('attributes') > -1) {
+            context[name] = new Attributes(value);
+          }
+        });
 
         let self = this;
 
