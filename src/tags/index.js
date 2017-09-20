@@ -3,76 +3,13 @@
 const fractal = require('@frctl/fractal');
 const _ = require('lodash');
 const Path = require('path');
-const adapter = require('./../adapter');
+const adapter = require('../adapter');
+const Attributes = require('../attributes');
 
 module.exports = function(fractal){
 
     return {
         render(Twig) {
-            // @todo Duplicate of class in adapter; move into shared dependency.
-            function AttributesObject(initialAttributes) {
-                let self = this;
-                this.classes = [];
-                this.storage = {};
-
-                this.addClass = function (...classnames) {
-                    self.classes = _.concat(self.classes, classnames);
-                    return self;
-                };
-
-                this.removeClass = function (...classnames) {
-                    _.pullAll(self.classes, classnames);
-                    return self;
-                };
-
-                this.setAttribute = function (name, value) {
-                    self.storage[name] = value;
-                    return self;
-                };
-
-                this.merge = function (attributes) {
-                    // Matches both this function prototype and the class in the
-                    // main adapter.
-                    if (attributes.constructor && attributes.constructor.name === 'AttributesObject') {
-                        self.classes = _.concat(self.classes, attributes.classes);
-                        _.merge(self.storage, attributes.storage);
-                    }
-                    else {
-                        _.forEach(attributes, function (value, name) {
-                            // The interactive web server picks up the internal
-                            // _keys property in context data that is regenerated
-                            // by adapter().render().setKeys().
-                            // (The build/export does not expose this gem.)
-                            if (name === '_keys') {
-                                return;
-                            }
-                            if (name === 'class') {
-                                if (typeof value === 'string') {
-                                    value = value.split(' ');
-                                }
-                                self.addClass(value);
-                            }
-                            else {
-                                self.setAttribute(name, value);
-                            }
-                        });
-                    }
-                    return self;
-                };
-
-                // Constructor.
-                if (initialAttributes !== undefined) {
-                    self.merge(initialAttributes);
-                }
-            }
-            AttributesObject.prototype.toString = function () {
-                let string = ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
-                _.forEach(this.storage, function (value, name) {
-                    string += ` ${name}="${value}"`;
-                });
-                return string;
-            };
-
             return {
                 /**
                  * Block logic tokens.
@@ -141,7 +78,11 @@ module.exports = function(fractal){
                         innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
                     }
 
-                    innerContext.attributes = new AttributesObject(innerContext.attributes);
+                    _.forEach(innerContext, function (value, name) {
+                      if (name.indexOf('attributes') > -1) {
+                        innerContext[name] = new Attributes(value);
+                      }
+                    });
 
                     if (token.withStack !== undefined) {
                         passedArguments = Twig.expression.parse.apply(this, [token.withStack, context]);
@@ -152,8 +93,8 @@ module.exports = function(fractal){
                             if (innerContext[name] === undefined) {
                                 return;
                             }
-                            if (name === 'attributes') {
-                                innerContext.attributes.merge(value);
+                            if (name.indexOf('attributes') > -1) {
+                                innerContext[name].merge(value);
                             }
                             else {
                                 innerContext[name] = value;
