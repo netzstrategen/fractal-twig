@@ -68,6 +68,30 @@ class TwigAdapter extends Fractal.Adapter {
                         let prefixMatcher = new RegExp(`^\\${self._config.handlePrefix}`);
                         let entity = source.find(handle.replace(prefixMatcher, '@'));
                         if (entity) {
+                            // @todo A more proper place for adjusting default context
+                            //   variables would be at the beginning of the render()
+                            //   method of this adapter (below), but the entity's parent
+                            //   does not seem to be accessible from the passed meta
+                            //   variable there. Another approach would be to
+                            //   monkey-patch the mergeDefaults() method to apply a
+                            //   special behavior for the .class property within context
+                            //   variables whose name contain 'attributes'.
+                            if (!entity.isDefault) {
+                              let defaultContext = entity.parent.variants().default().getContext();
+                              _.forEach(defaultContext, function (value, name) {
+                                if (name.indexOf('attributes') > -1) {
+                                  if (defaultContext[name] !== undefined && defaultContext[name].class !== undefined) {
+                                    if (typeof defaultContext[name].class === 'string') {
+                                      defaultContext[name].class = defaultContext[name].class.split(' ');
+                                    }
+                                    // context was converted into Attributes by the
+                                    // adapter's render() method (below) already.
+                                    context[name].addClass(defaultContext[name].class);
+                                  }
+                                }
+                              });
+                            }
+
                             entity = entity.isVariant ? entity : entity.variants().default();
                             if (config.importContext) {
                                 context = utils.defaultsDeep(_.cloneDeep(context), entity.getContext());
@@ -217,6 +241,10 @@ class TwigAdapter extends Fractal.Adapter {
     }
 
     render(path, str, context, meta) {
+        // Class names of variables whose names contain 'attributes' are merged
+        // instead of being replaced.
+        // @see TwigAdapter:Twig.Template.prototype.render()
+        // @see TwigAdapter/tags:render()
         _.forEach(context, function (value, name) {
           if (name.indexOf('attributes') > -1) {
             context[name] = new Attributes(value);
