@@ -66,6 +66,19 @@ class Attributes {
     };
 
     /**
+     * Returns whether the class attribute contains a given CSS class name.
+     *
+     * @param string $classname
+     *   The CSS class name to check for.
+     *
+     * @return bool
+     *   TRUE if the class name exists, FALSE otherwise.
+     */
+    hasClass(classname) {
+        return this.classes.indexOf(classname) > -1;
+    };
+
+    /**
      * Sets an attribute to a given value.
      *
      * @param string name
