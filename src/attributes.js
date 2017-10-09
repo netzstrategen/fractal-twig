@@ -142,7 +142,10 @@ class Attributes {
  * @return string
  */
 Attributes.prototype.toString = function () {
-    let string = ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
+    let string = '';
+    if (this.classes.length) {
+        string += ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
+    }
     _.forEach(this.storage, function (value, name) {
         string += ` ${name}="${value}"`;
     });
