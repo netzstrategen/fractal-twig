@@ -147,7 +147,12 @@ Attributes.prototype.toString = function () {
         string += ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
     }
     _.forEach(this.storage, function (value, name) {
-        string += ` ${name}="${value}"`;
+        if (value !== null) {
+            string += ` ${name}="${value}"`;
+        }
+        else {
+            string += ` ${name}`;
+        }
     });
     return string;
 };
