@@ -8,13 +8,14 @@ module.exports = function (fractal) {
         field_value(str) {
             return str;
         },
-        without(element, exclude) {
-            for (var i = 0; i < exclude.length; i++) {
-                if (element.hasOwnProperty(exclude[i])) {
-                    delete element[exclude[i]];
+        without(element, exclude_elements) {
+            filtred_element = element;
+            exclude_elements.forEach(function (exclude) {
+                if (element.hasOwnProperty(exclude)) {
+                    delete filtred_element[exclude];
                 }
-            }
-            return element;
+            });
+            return filtred_element;
         },
         path: require('./path.js')(fractal),
     }
