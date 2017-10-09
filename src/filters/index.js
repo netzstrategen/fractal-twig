@@ -9,13 +9,13 @@ module.exports = function (fractal) {
             return str;
         },
         without(element, exclude_elements) {
-            filtred_element = element;
+            filtered_element = element;
             exclude_elements.forEach(function (exclude) {
                 if (element.hasOwnProperty(exclude)) {
-                    delete filtred_element[exclude];
+                    delete filtered_element[exclude];
                 }
             });
-            return filtred_element;
+            return filtered_element;
         },
         path: require('./path.js')(fractal),
     }
