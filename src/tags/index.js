@@ -80,7 +80,7 @@ module.exports = function(fractal){
                         // The classes of the default context attributes need to be
                         // merged manually.
                         // @see Twig.Template.prototype.render(), adapter.js
-                        if (!entity.isDefault) {
+                        if (entity.isDefault !== undefined && !entity.isDefault) {
                             let defaultContext = entity.parent.variants().default().context;
                             if (defaultContext.attributes !== undefined && defaultContext.attributes.class !== undefined) {
                                 if (typeof defaultContext.attributes.class === 'string') {
