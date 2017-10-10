@@ -76,6 +76,19 @@ module.exports = function(fractal){
                             throw new Error(`Unable to render '${handle}' - component not found.`);
                         }
                         innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
+
+                        // The classes of the default context attributes need to be
+                        // merged manually.
+                        // @see Twig.Template.prototype.render(), adapter.js
+                        if (!entity.isDefault) {
+                            let defaultContext = entity.parent.variants().default().context;
+                            if (defaultContext.attributes !== undefined && defaultContext.attributes.class !== undefined) {
+                                if (typeof defaultContext.attributes.class === 'string') {
+                                    defaultContext.attributes.class = defaultContext.attributes.class.split(' ');
+                                }
+                                innerContext.attributes.class = _.concat(defaultContext.attributes.class, innerContext.attributes.class);
+                            }
+                        }
                     }
 
                     _.forEach(innerContext, function (value, name) {
