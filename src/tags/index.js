@@ -129,21 +129,66 @@ module.exports = function(fractal){
                 }
             }
         },
+
         trans(Twig) {
             return {
                 type: 'trans',
-                regex: /^trans/,
+                regex: /^trans(.+)?/,
                 next: ['endtrans'],
                 open: true,
                 compile: function (token) {
                     return token;
                 },
                 parse: function (token, context, chain) {
-                    return {
-                        chain: chain,
-                        output: Twig.parse.apply(this, [token.output, context])
-                    };
+                    var that = this;
+                    return Twig.parseAsync.call(that, token.output, context)
+                    .then(function (value) {
+                        var plural_token = false;
+                        var plural_position = 0;
+
+                        // Look for plural tag.
+                        for (let statment of token.output) {
+                            plural_position++;
+                            if (statment.type === 'logic' && statment.token.type === 'plural') {
+                                plural_token = statment.token;
+                                break;
+                            }
+                        };
+
+                        if (plural_token !== false && typeof  plural_token.match[1] === 'string') {
+                            // Evaluate plural variable.
+                            var plural_check = Twig.expression.compile({
+                                type: Twig.expression.type.expression,
+                                value: plural_token.match[1].trim() + ' == 1'
+                            }).stack;
+                            var isPlural = Twig.expression.parse(plural_check, context);
+
+                            if (isPlural) {
+                                token.output = token.output.slice(0, plural_position);
+                            }
+                            else {
+                                token.output = token.output.slice(plural_position, token.output.length);
+                            }
+                        }
+
+                        return {
+                            chain: chain,
+                            output: Twig.parse.apply(that, [token.output, context])
+                        };
+                    });
                 }
+            };
+        },
+        plural(Twig) {
+            // It's just the tag wrapper, the parse logic is contained by trans tag.
+            return {
+                type: 'plural',
+                regex: /^plural(.+)?/,
+                next: [],
+                open: true,
+                compile: function (token) {
+                    return token;
+                },
             };
         },
         endtrans(Twig) {
