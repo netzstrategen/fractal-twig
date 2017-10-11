@@ -55,39 +55,49 @@ module.exports = function(fractal){
                 parse: function (token, context, chain) {
                     let components = fractal.components;
 
+                    // this is new code
                     let file = Twig.expression.parse.apply(this, [token.stack, context]);
                     let handle = Path.parse(file).name;
                     if (handle.indexOf('@') !== 0) {
                         handle = '@' + handle;
                     }
+                    //end new code
 
                     // Resolve filename
                     var innerContext = {},
                       passedArguments,
                       i,
-                      template;
+                      template,
+                      that = this,
+                      promise = Twig.Promise.resolve();
 
                     if (!token.only) {
                         innerContext = Twig.ChildContext(context);
                     }
+                    // this is new code
                     else {
                         const entity = components.find(handle);
                         if (!entity) {
                             throw new Error(`Unable to render '${handle}' - component not found.`);
                         }
-                        innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
+                        try {
+                            innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
 
-                        // The classes of the default context attributes need to be
-                        // merged manually.
-                        // @see Twig.Template.prototype.render(), adapter.js
-                        if (entity.isDefault !== undefined && !entity.isDefault) {
-                            let defaultContext = entity.parent.variants().default().context;
-                            if (defaultContext.attributes !== undefined && defaultContext.attributes.class !== undefined) {
-                                if (typeof defaultContext.attributes.class === 'string') {
-                                    defaultContext.attributes.class = defaultContext.attributes.class.split(' ');
+                            // The classes of the default context attributes need to be
+                            // merged manually.
+                            // @see Twig.Template.prototype.render(), adapter.js
+                            if (entity.isDefault !== undefined && !entity.isDefault) {
+                                let defaultContext = entity.parent.variants().default().context;
+                                if (defaultContext.attributes !== undefined && defaultContext.attributes.class !== undefined) {
+                                    if (typeof defaultContext.attributes.class === 'string') {
+                                        defaultContext.attributes.class = defaultContext.attributes.class.split(' ');
+                                    }
+                                    innerContext.attributes.class = _.concat(defaultContext.attributes.class, innerContext.attributes.class);
                                 }
-                                innerContext.attributes.class = _.concat(defaultContext.attributes.class, innerContext.attributes.class);
                             }
+                        }
+                        catch (err) {
+                            throw err;
                         }
                     }
 
@@ -96,36 +106,60 @@ module.exports = function(fractal){
                         innerContext[name] = new Attributes(value);
                       }
                     });
+                    // end new code
 
                     if (token.withStack !== undefined) {
-                        passedArguments = Twig.expression.parse.apply(this, [token.withStack, context]);
+                        promise = Twig.expression.parseAsync.call(this, token.withStack, context)
+                        .then(function(withContext) {
 
-                        _.forEach(passedArguments, function (value, name) {
-                            // It makes no sense to pass variables that are not
-                            // supported by the component.
-                            if (innerContext[name] === undefined) {
-                                return;
-                            }
-                            if (name.indexOf('attributes') > -1) {
-                                innerContext[name].merge(value);
-                            }
-                            else {
-                                innerContext[name] = value;
-                            }
+                            //passedArguments = Twig.expression.parse.apply(this, [token.withStack, context]);
+
+                            //_.forEach(passedArguments, function (value, name) {
+                            _.forEach(withContext, function (value, name) {
+                                // It makes no sense to pass variables that are not
+                                // supported by the component.
+                                if (innerContext[name] === undefined) {
+                                    return;
+                                }
+                                if (name.indexOf('attributes') > -1) {
+                                    innerContext[name].merge(value);
+                                }
+                                else {
+                                    innerContext[name] = value;
+                                }
+                            });
                         });
                     }
 
-                    if (file instanceof Twig.Template) {
-                        template = file;
-                    }
-                    else {
-                        template = this.importFile(file);
-                    }
+                    return promise
+                    .then(function (){
+                        return Twig.expression.parseAsync.call(that, token.stack, context);
+                    })
+                    .then(function (file) {
+                        if (file instanceof Twig.Template) {
+                            template = file;
+                        }
+                        else {
+                            try {
+                                template = that.importFile(file);
+                            }
+                            catch (err) {
+                                if (token.ignoreMissing) {
+                                    return '';
+                                }
+                                throw err;
+                            }
+                        }
 
-                    return {
-                        chain: chain,
-                        output: template.render(innerContext)
-                    };
+                        return template.renderAsync(innerContext);
+                    })
+                    .then(function(output) {
+                        return {
+                            chain: chain,
+                            output: output
+                        };
+
+                    })
                 }
             }
         },

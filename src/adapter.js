@@ -65,39 +65,45 @@ class TwigAdapter extends Fractal.Adapter {
                     }
 
                     if (handle) {
-                        let prefixMatcher = new RegExp(`^\\${self._config.handlePrefix}`);
-                        let entity = source.find(handle.replace(prefixMatcher, '@'));
-                        if (entity) {
-                            // @todo A more proper place for adjusting default context
-                            //   variables would be at the beginning of the render()
-                            //   method of this adapter (below), but the entity's parent
-                            //   does not seem to be accessible from the passed meta
-                            //   variable there. Another approach would be to
-                            //   monkey-patch the mergeDefaults() method to apply a
-                            //   special behavior for the .class property within context
-                            //   variables whose name contain 'attributes'.
-                            if (!entity.isDefault) {
-                              let defaultContext = entity.parent.variants().default().getContext();
-                              _.forEach(defaultContext, function (value, name) {
-                                if (name.indexOf('attributes') > -1) {
-                                  if (defaultContext[name] !== undefined && defaultContext[name].class !== undefined) {
-                                    if (typeof defaultContext[name].class === 'string') {
-                                      defaultContext[name].class = defaultContext[name].class.split(' ');
-                                    }
-                                    // context was converted into Attributes by the
-                                    // adapter's render() method (below) already.
-                                    context[name].addClass(defaultContext[name].class);
-                                  }
-                                }
-                              });
-                            }
+                        try {
 
-                            entity = entity.isVariant ? entity : entity.variants().default();
-                            if (config.importContext) {
-                                context = utils.defaultsDeep(_.cloneDeep(context), entity.getContext());
-                                context._self = entity.toJSON();
-                                setKeys(context);
+                            let prefixMatcher = new RegExp(`^\\${self._config.handlePrefix}`);
+                            let entity = source.find(handle.replace(prefixMatcher, '@'));
+                            if (entity) {
+                                // @todo A more proper place for adjusting default context
+                                //   variables would be at the beginning of the render()
+                                //   method of this adapter (below), but the entity's parent
+                                //   does not seem to be accessible from the passed meta
+                                //   variable there. Another approach would be to
+                                //   monkey-patch the mergeDefaults() method to apply a
+                                //   special behavior for the .class property within context
+                                //   variables whose name contain 'attributes'.
+                                if (!entity.isDefault) {
+                                    let defaultContext = entity.parent.variants().default().getContext();
+                                    _.forEach(defaultContext, function (value, name) {
+                                        if (name.indexOf('attributes') > -1) {
+                                            if (defaultContext[name] !== undefined && defaultContext[name].class !== undefined) {
+                                                if (typeof defaultContext[name].class === 'string') {
+                                                    defaultContext[name].class = defaultContext[name].class.split(' ');
+                                                }
+                                                // context was converted into Attributes by the
+                                                // adapter's render() method (below) already.
+                                                context[name].addClass(defaultContext[name].class);
+                                            }
+                                        }
+                                    });
+                                }
+
+                                entity = entity.isVariant ? entity : entity.variants().default();
+                                if (config.importContext) {
+                                    context = utils.defaultsDeep(_.cloneDeep(context), entity.getContext());
+                                    context._self = entity.toJSON();
+                                    setKeys(context);
+                                }
                             }
+                        }
+                        catch (err) {
+                            throw err;
                         }
                     }
                 }
@@ -118,8 +124,7 @@ class TwigAdapter extends Fractal.Adapter {
                         }
                     });
                 }
-
-                return render.call(this, context, params);
+                return render.call(this, context, params, true);
             };
 
             /*
@@ -274,7 +279,7 @@ class TwigAdapter extends Fractal.Adapter {
                     name: meta.self ? `${self._config.handlePrefix}${meta.self.handle}` : tplPath,
                     precompiled: str
                 });
-                resolve(template.render(context));
+                resolve(template.render(context, {}, true));
             } catch (e) {
                 reject(new Error(e));
             }
