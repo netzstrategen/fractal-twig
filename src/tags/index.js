@@ -78,7 +78,9 @@ module.exports = function(fractal){
                     else {
                         const entity = components.find(handle);
                         if (!entity) {
-                            throw new Error(`Unable to render '${handle}' - component not found.`);
+                            var not_found_error = new Error(`Unable to render '${handle}' - component not found.`);
+                            console.log(not_found_error.stack);
+                            throw not_found_error;
                         }
                         try {
                             innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
