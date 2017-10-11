@@ -31,6 +31,18 @@ class Attributes {
         if (attributes !== undefined) {
             this.merge(attributes);
         }
+        return new Proxy(this, this);
+    }
+
+    get(self, prop) {
+        // Twig invokes 'get[Camelized]()' methods for undefined properties.
+        // Intercept them here.
+        if (typeof prop === 'string' && prop.indexOf('get') === 0) {
+            prop = prop.substring(3);
+            prop = prop.substring(0, 1).toLowerCase() + prop.substring(1);
+            return self.storage[prop];
+        }
+        return self[prop];
     }
 
     /**
