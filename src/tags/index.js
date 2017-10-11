@@ -134,7 +134,7 @@ module.exports = function(fractal){
             return {
                 type: 'trans',
                 regex: /^trans(.+)?/,
-                next: ['endtrans'],
+                next: ['plural', 'endtrans'],
                 open: true,
                 compile: function (token) {
                     return token;
@@ -147,15 +147,15 @@ module.exports = function(fractal){
                         var plural_position = 0;
 
                         // Look for plural tag.
-                        for (let statment of token.output) {
+                        for (let statement of token.output) {
                             plural_position++;
-                            if (statment.type === 'logic' && statment.token.type === 'plural') {
-                                plural_token = statment.token;
+                            if (statement.type === 'logic' && statement.token.type === 'plural') {
+                                plural_token = statement.token;
                                 break;
                             }
                         };
 
-                        if (plural_token !== false && typeof  plural_token.match[1] === 'string') {
+                        if (plural_token !== false && typeof plural_token.match[1] === 'string') {
                             // Evaluate plural variable.
                             var plural_check = Twig.expression.compile({
                                 type: Twig.expression.type.expression,
@@ -180,7 +180,7 @@ module.exports = function(fractal){
             };
         },
         plural(Twig) {
-            // It's just the tag wrapper, the parse logic is contained by trans tag.
+            // This is a placeholder. The actual parser logic is part of the trans tag.
             return {
                 type: 'plural',
                 regex: /^plural(.+)?/,
