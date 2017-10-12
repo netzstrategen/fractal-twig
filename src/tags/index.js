@@ -55,15 +55,12 @@ module.exports = function(fractal){
                 parse: function (token, context, chain) {
                     let components = fractal.components;
 
-                    // this is new code
                     let file = Twig.expression.parse.apply(this, [token.stack, context]);
                     let handle = Path.parse(file).name;
                     if (handle.indexOf('@') !== 0) {
                         handle = '@' + handle;
                     }
-                    //end new code
 
-                    // Resolve filename
                     var innerContext = {},
                       passedArguments,
                       i,
@@ -71,18 +68,18 @@ module.exports = function(fractal){
                       that = this,
                       promise = Twig.Promise.resolve();
 
-                    if (!token.only) {
-                        innerContext = Twig.ChildContext(context);
-                    }
-                    // this is new code
-                    else {
-                        const entity = components.find(handle);
-                        if (!entity) {
-                            var not_found_error = new Error(`Unable to render '${handle}' - component not found.`);
-                            console.log(not_found_error.stack);
-                            throw not_found_error;
+                    promise.then(function(){
+                        // Resolve filename
+                        if (!token.only) {
+                            innerContext = Twig.ChildContext(context);
                         }
-                        try {
+                        else {
+                            const entity = components.find(handle);
+
+                            if (!entity) {
+                                throw new Twig.Error(`Unable to render '${handle}' - component not found.`);
+                            }
+
                             innerContext = entity.isComponent ? entity.variants().default().context : entity.context;
 
                             // The classes of the default context attributes need to be
@@ -98,25 +95,19 @@ module.exports = function(fractal){
                                 }
                             }
                         }
-                        catch (err) {
-                            throw err;
-                        }
-                    }
 
-                    _.forEach(innerContext, function (value, name) {
-                      if (name.indexOf('attributes') > -1) {
-                        innerContext[name] = new Attributes(value);
-                      }
+                        _.forEach(innerContext, function (value, name) {
+                            if (name.indexOf('attributes') > -1) {
+                                innerContext[name] = new Attributes(value);
+                            }
+                        });
+
+                        return innerContext;
                     });
-                    // end new code
 
                     if (token.withStack !== undefined) {
                         promise = Twig.expression.parseAsync.call(this, token.withStack, context)
                         .then(function(withContext) {
-
-                            //passedArguments = Twig.expression.parse.apply(this, [token.withStack, context]);
-
-                            //_.forEach(passedArguments, function (value, name) {
                             _.forEach(withContext, function (value, name) {
                                 // It makes no sense to pass variables that are not
                                 // supported by the component.
@@ -165,6 +156,7 @@ module.exports = function(fractal){
                 }
             }
         },
+
         trans(Twig) {
             return {
                 type: 'trans',
