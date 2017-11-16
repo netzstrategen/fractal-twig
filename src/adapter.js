@@ -241,15 +241,7 @@ class TwigAdapter extends Fractal.Adapter {
     }
 
     render(path, str, context, meta) {
-        // Class names of variables whose names contain 'attributes' are merged
-        // instead of being replaced.
-        // @see TwigAdapter:Twig.Template.prototype.render()
-        // @see TwigAdapter/tags:render()
-        _.forEach(context, function (value, name) {
-          if (name.indexOf('attributes') > -1) {
-            context[name] = new Attributes(value);
-          }
-        });
+        Attributes.convert(context);
 
         let self = this;
 

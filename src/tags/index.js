@@ -91,11 +91,7 @@ module.exports = function(fractal){
                         }
                     }
 
-                    _.forEach(innerContext, function (value, name) {
-                      if (name.indexOf('attributes') > -1) {
-                        innerContext[name] = new Attributes(value);
-                      }
-                    });
+                    Attributes.convert(innerContext);
 
                     if (token.withStack !== undefined) {
                         passedArguments = Twig.expression.parse.apply(this, [token.withStack, context]);
