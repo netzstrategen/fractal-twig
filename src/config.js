@@ -6,7 +6,12 @@ const yaml = require('js-yaml');
 
 const fractal = require('../../../../fractal.config');
 
-
+/**
+ * Export contents of sibling `*.config.yml` component config file.
+ *
+ * Fractal YAML contains 'real' configuration shared between pattern library and application.
+ * Use `*.config.js` to populate Fractal components with dummy data which isn't exposed to app.
+ */
 class ComponentConfig {
 
   constructor(componentName) {
