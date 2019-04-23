@@ -11,6 +11,11 @@ const fractal = require('../../../../fractal.config');
  *
  * Fractal YAML contains 'real' configuration shared between pattern library and application.
  * Use `*.config.js` to populate Fractal components with dummy data which isn't exposed to app.
+ *
+ * @usage:
+    const ComponentConfig = require('@netzstrategen/twig-drupal-fractal-adapter/src/config');
+    const componentHandle = require('path').basename(__filename).split('.')[0]; // Pass component name to class.
+    let config = new ComponentConfig(componentHandle).getConfig(); // Assign contents of *.config.yml to variable.
  */
 class ComponentConfig {
 
@@ -27,7 +32,6 @@ class ComponentConfig {
     try {
       let contents = fs.readFileSync(this.getFilePath(), 'utf8');
       return yaml.load(contents);
-      // console.log(util.inspect(data, false, 10, true));
     }
     catch (err) {
       console.log(err.stack || String(err));
