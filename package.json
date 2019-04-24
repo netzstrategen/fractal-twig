@@ -15,6 +15,7 @@
   "homepage": "https://github.com/netzstrategen/twig-drupal",
   "dependencies": {
     "@frctl/fractal": "latest",
+    "callsites": "^3.1.0",
     "glob": "^7.1.2",
     "js-yaml": "^3.9.0",
     "lodash": "^4.15.0",

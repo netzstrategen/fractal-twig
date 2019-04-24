@@ -1,10 +1,8 @@
 'use strict';
 
+const callsites = require('callsites');
 const fs = require('fs');
-const glob = require('glob');
 const yaml = require('js-yaml');
-
-const fractal = require('../../../../fractal.config');
 
 /**
  * Export contents of sibling `*.config.yml` component config file.
@@ -14,20 +12,24 @@ const fractal = require('../../../../fractal.config');
  *
  * @usage:
     const ComponentConfig = require('@netzstrategen/twig-drupal-fractal-adapter/src/config');
-    const componentHandle = require('path').basename(__filename).split('.')[0]; // Pass component name to class.
-    let config = new ComponentConfig(componentHandle).getConfig(); // Assign contents of *.config.yml to variable.
+    let config = new ComponentConfig().getConfig(); // Assign contents of *.config.yml to variable.
  */
 class ComponentConfig {
 
-  constructor(componentName) {
-    this.componentName = componentName;
-    this.componentsPath = fractal.components.get('path');
-  }
-
+  /**
+   * Returns the filepath of the caller.
+   * Simply replace `.js` with `.yml` to get Fractal YML config filepath.
+   *
+   * @see https://github.com/sindresorhus/callsites
+   */
   getFilePath() {
-    return glob.sync(this.componentsPath + '/**/**/' + this.componentName + '.config.yml').toString();
+    let filePath = callsites()[2].getFileName(); // [0] and [1] return global fractal.config.js.
+    return filePath.replace('.js', '.yml');
   }
 
+  /**
+   * Returns the parsed yml config.
+   */
   getConfig() {
     try {
       let contents = fs.readFileSync(this.getFilePath(), 'utf8');
