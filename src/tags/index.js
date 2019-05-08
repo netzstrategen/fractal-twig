@@ -105,8 +105,10 @@ module.exports = function(fractal){
                             if (name.indexOf('attributes') > -1) {
                                 innerContext[name].merge(value);
                             }
-                            else {
-                                innerContext[name] = value;
+                            // If the parent context key is missing (undefined) or true,
+                            // render the component default value, use passed value otherwise.
+                            else if (typeof value !== 'undefined' && value !== true) {
+                              innerContext[name] = value;
                             }
                         });
                     }
