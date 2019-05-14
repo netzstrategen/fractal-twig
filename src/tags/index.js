@@ -95,6 +95,8 @@ module.exports = function(fractal){
 
                     if (token.withStack !== undefined) {
                         passedArguments = Twig.expression.parse.apply(this, [token.withStack, context]);
+                        // Variables not defined by the component context are
+                        // intentionally ignored.
                         _.forEach(innerContext, function (value, name) {
                           // Override default value only if an argument value is passed.
                           if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined') {
