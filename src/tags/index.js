@@ -99,6 +99,10 @@ module.exports = function(fractal){
                         // intentionally ignored.
                         _.forEach(innerContext, function (value, name) {
                           // Override default value only if an argument value is passed.
+                          // Ignore undefined variables, which may appear when rendering
+                          // a component with dummy/faker data but without values for its
+                          // child components, so that each component only generates its
+                          // own dummy data.
                           if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined') {
                             return;
                           }
