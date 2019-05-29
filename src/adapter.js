@@ -43,6 +43,18 @@ class TwigAdapter extends Fractal.Adapter {
             });
 
             /*
+            * Register a custom Filesystem loader to support namespaces.
+            * Locations can be handles or paths.
+            */
+            Twig.Templates.registerLoader('fs', function(location, params, callback, errorCallback) {
+                let view = findView(location, source.fullPath);
+                if (!view) {
+                    throw new Error(`File ${location} not found`);
+                }
+                return view.content;
+            });
+
+            /*
              * Monkey patch the render method to make sure that the _self variable
              * always refers to the actual component/sub-component being rendered.
              * Without this _self would always refer to the root component.
@@ -186,7 +198,10 @@ class TwigAdapter extends Fractal.Adapter {
             for (let library in libraries) {
                 let name = handlePrefix + library;
                 let path = libraries[library].paths[0];
-                sourcePath = sourcePath.replace(Path.dirname(path), '');
+                let baseDir = Path.dirname(path);
+                if (baseDir !== '/') {
+                  sourcePath = sourcePath.replace(baseDir, '');
+                }
                 // @handle
                 paths.push(handle);
                 // @handle/custom-twig
