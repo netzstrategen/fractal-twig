@@ -43,9 +43,9 @@ class TwigAdapter extends Fractal.Adapter {
             });
 
             /*
-            * Register a custom Filesystem loader to support namespaces.
-            * Locations can be handles or paths.
-            */
+             * Register a custom Filesystem loader to support namespaces.
+             * Locations can be handles or paths.
+             */
             Twig.Templates.registerLoader('fs', function(location, params, callback, errorCallback) {
                 let view = findView(location, source.fullPath);
                 if (!view) {
