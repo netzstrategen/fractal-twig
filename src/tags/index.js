@@ -95,19 +95,23 @@ module.exports = function(fractal){
 
                     if (token.withStack !== undefined) {
                         passedArguments = Twig.expression.parse.apply(this, [token.withStack, context]);
-
-                        _.forEach(passedArguments, function (value, name) {
-                            // It makes no sense to pass variables that are not
-                            // supported by the component.
-                            if (innerContext[name] === undefined) {
-                                return;
-                            }
-                            if (name.indexOf('attributes') > -1) {
-                                innerContext[name].merge(value);
-                            }
-                            else {
-                                innerContext[name] = value;
-                            }
+                        // Variables not defined by the component context are
+                        // intentionally ignored.
+                        _.forEach(innerContext, function (value, name) {
+                          // Override default value only if an argument value is passed.
+                          // Ignore undefined variables, which may appear when rendering
+                          // a component with dummy/faker data but without values for its
+                          // child components, so that each component only generates its
+                          // own dummy data.
+                          if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined') {
+                            return;
+                          }
+                          if (name.indexOf('attributes') > -1) {
+                            value.merge(passedArguments[name]);
+                          }
+                          else {
+                            innerContext[name] = passedArguments[name];
+                          }
                         });
                     }
 
