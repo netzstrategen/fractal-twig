@@ -26,7 +26,7 @@ const merge = function (object1, object2, keyName) {
       object1[index] = cloner.deep.merge(found, currentElement);
     }
   }
-  // Simple deep merge otherwise
+  // Simple deep merge otherwise.
   else {
     object1 = cloner.deep.merge(object2, object1);
   }
