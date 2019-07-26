@@ -137,41 +137,42 @@ class Attributes {
      * @param object context
      *   The context variables to process.
      */
-    static convert(context) {
+    static convert(context, recurse) {
+        recurse = recurse || false;
         _.forEach(context, (value, name) => {
             if (typeof name === 'string' && name.indexOf('attributes') > -1) {
                 context[name] = new Attributes(value);
             }
-            else if (_.isObject(value)) {
+            else if (recurse && _.isObject(value)) {
                 this.convert(value);
             }
         });
     };
 
-}
+  /**
+   * Serializes all attributes into an HTML element attributes string.
+   *
+   * The resulting string MUST start with a space, unless there are no attributes
+   * to serialize.
+   *
+   * @return string
+   */
+  toString() {
+      let string = '';
+      if (this.classes.length) {
+          string += ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
+      }
+      _.forEach(this.storage, function (value, name) {
+          if (value !== null) {
+              string += ` ${name}="${value}"`;
+          }
+          else {
+              string += ` ${name}`;
+          }
+      });
+      return string;
+  };
 
-/**
- * Serializes all attributes into an HTML element attributes string.
- *
- * The resulting string MUST start with a space, unless there are no attributes
- * to serialize.
- *
- * @return string
- */
-Attributes.prototype.toString = function () {
-    let string = '';
-    if (this.classes.length) {
-        string += ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
-    }
-    _.forEach(this.storage, function (value, name) {
-        if (value !== null) {
-            string += ` ${name}="${value}"`;
-        }
-        else {
-            string += ` ${name}`;
-        }
-    });
-    return string;
-};
+}
 
 module.exports = Attributes;

@@ -63,6 +63,8 @@ class TwigAdapter extends Fractal.Adapter {
             const render = Twig.Template.prototype.render;
             Twig.Template.prototype.render = function(context, params) {
 
+                Attributes.convert(context);
+
                 if (!self._config.pristine && this.id) {
 
                     let handle = null;
@@ -256,8 +258,6 @@ class TwigAdapter extends Fractal.Adapter {
     }
 
     render(path, str, context, meta) {
-        Attributes.convert(context);
-
         let self = this;
 
         meta = meta || {};
