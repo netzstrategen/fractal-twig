@@ -140,7 +140,7 @@ class Attributes {
     static convert(context) {
         _.forEach(context, (value, name) => {
             if (typeof name === 'string' && name.indexOf('attributes') > -1) {
-                context[name] = new Attributes(value);
+                context[name] = this.proxy(new Attributes(value));
             }
             else if (_.isObject(value)) {
                 this.convert(value);
@@ -171,6 +171,39 @@ class Attributes {
       });
       return string;
   };
+
+  /**
+   * Proxies direct attribute property access.
+   *
+   * @param attributes
+   * @returns {any|undefined}
+   */
+  static proxy(attributes) {
+      return new Proxy(attributes, {
+          get (target, name, receiver) {
+              if (!Reflect.has(target, name)) {
+                  // Check if getter is string.
+                  if (typeof name === 'string' && name.indexOf('get') !== -1) {
+                      // Trim method name to obtain getter property.
+                      name = name.replace('get', '').toLowerCase();
+                      // Check if we want to access the class property.
+                      if (name === 'class') {
+                          name = 'classes';
+                      }
+                      // Return key from storage property otherwise.
+                      else {
+                          target = target.storage;
+                      }
+                  }
+                  // Fail if property not exists on target.
+                  else {
+                      return undefined;
+                  }
+              }
+              return Reflect.get(target, name, receiver);
+          }
+      });
+  }
 
 }
 
