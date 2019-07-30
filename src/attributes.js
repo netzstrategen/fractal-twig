@@ -184,9 +184,10 @@ class Attributes {
               if (!Reflect.has(target, name)) {
                   // Check if getter is string.
                   if (typeof name === 'string' && name.indexOf('get') !== -1) {
-                      // Trim method name to obtain getter property.
+                      // Property names look like this:`isSrc`, `getSrc` so we need
+                      // to strip the get prefix to obtain the correct attribute key.
                       name = name.replace('get', '').toLowerCase();
-                      // Check if we want to access the class property.
+                      // If the classes are requested, don't access the storage property.
                       if (name === 'class') {
                           name = 'classes';
                       }
