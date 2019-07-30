@@ -137,14 +137,13 @@ class Attributes {
      * @param object context
      *   The context variables to process.
      */
-    static convert(context, recurse) {
-        recurse = recurse || false;
+    static convert(context) {
         _.forEach(context, (value, name) => {
             if (typeof name === 'string' && name.indexOf('attributes') > -1) {
                 context[name] = new Attributes(value);
             }
-            else if (recurse && _.isObject(value)) {
-                this.convert(value, recurse);
+            else if (_.isObject(value)) {
+                this.convert(value);
             }
         });
     };
