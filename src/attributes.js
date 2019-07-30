@@ -144,7 +144,7 @@ class Attributes {
                 context[name] = new Attributes(value);
             }
             else if (recurse && _.isObject(value)) {
-                this.convert(value);
+                this.convert(value, recurse);
             }
         });
     };
