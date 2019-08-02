@@ -148,61 +148,61 @@ class Attributes {
         });
     };
 
-  /**
-   * Serializes all attributes into an HTML element attributes string.
-   *
-   * The resulting string MUST start with a space, unless there are no attributes
-   * to serialize.
-   *
-   * @return string
-   */
-  toString() {
-      let string = '';
-      if (this.classes.length) {
-          string += ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
-      }
-      _.forEach(this.storage, function (value, name) {
-          if (value !== null) {
-              string += ` ${name}="${value}"`;
-          }
-          else {
-              string += ` ${name}`;
-          }
-      });
-      return string;
-  };
+    /**
+     * Serializes all attributes into an HTML element attributes string.
+     *
+     * The resulting string MUST start with a space, unless there are no attributes
+     * to serialize.
+     *
+     * @return string
+     */
+    toString() {
+        let string = '';
+        if (this.classes.length) {
+            string += ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
+        }
+        _.forEach(this.storage, function (value, name) {
+            if (value !== null) {
+                string += ` ${name}="${value}"`;
+            }
+            else {
+                string += ` ${name}`;
+            }
+        });
+        return string;
+    };
 
-  /**
-   * Proxies direct attribute property access.
-   *
-   * @param attributes
-   * @returns {any|undefined}
-   */
-  static proxy(attributes) {
-      return new Proxy(attributes, {
-          get (target, name, receiver) {
-              if (typeof name === 'string' && !Reflect.has(target, name)) {
-                  if (name.indexOf('get') !== -1) {
-                      // Property names look like this:`isSrc`, `getSrc` so we need
-                      // to strip the get prefix to obtain the correct attribute key.
-                      name = name.replace('get', '').toLowerCase();
-                      // Re-route into storage unless class property is requested.
-                      if (name === 'class') {
-                          name = 'classes';
-                      }
-                      else {
-                          target = target.storage;
-                      }
-                  }
-                  // Do not forward other property accesses and tests (like isset()).
-                  else {
-                      return undefined;
-                  }
-              }
-              return Reflect.get(target, name, receiver);
-          }
-      });
-  }
+    /**
+     * Proxies direct attribute property access.
+     *
+     * @param attributes
+     * @returns {any|undefined}
+     */
+    static proxy(attributes) {
+        return new Proxy(attributes, {
+            get (target, name, receiver) {
+                if (typeof name === 'string' && !Reflect.has(target, name)) {
+                    if (name.indexOf('get') !== -1) {
+                        // Property names look like this:`isSrc`, `getSrc` so we need
+                        // to strip the get prefix to obtain the correct attribute key.
+                        name = name.replace('get', '').toLowerCase();
+                        // Re-route into storage unless class property is requested.
+                        if (name === 'class') {
+                            name = 'classes';
+                        }
+                        else {
+                            target = target.storage;
+                        }
+                    }
+                    // Do not forward other property accesses and tests (like isset()).
+                    else {
+                        return undefined;
+                    }
+                }
+                return Reflect.get(target, name, receiver);
+            }
+        });
+    }
 
 }
 
