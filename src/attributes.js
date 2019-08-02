@@ -173,7 +173,7 @@ class Attributes {
     };
 
     /**
-     * Proxies direct attribute property access.
+     * Proxies direct accesses to attribute properties.
      *
      * @param attributes
      * @returns {any|undefined}
@@ -183,8 +183,7 @@ class Attributes {
             get (target, name, receiver) {
                 if (typeof name === 'string' && !Reflect.has(target, name)) {
                     if (name.indexOf('get') !== -1) {
-                        // Property names look like this:`isSrc`, `getSrc` so we need
-                        // to strip the get prefix to obtain the correct attribute key.
+                        // Undo Twig's property name to method name conversion.
                         name = name.replace('get', '').toLowerCase();
                         // Re-route into storage unless class property is requested.
                         if (name === 'class') {
