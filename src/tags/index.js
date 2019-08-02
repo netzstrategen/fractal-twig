@@ -91,7 +91,6 @@ module.exports = function(fractal){
                         }
                     }
 
-                    // @todo prevent mutliple convert and merge attributes from Twig render method only.
                     Attributes.convert(innerContext);
 
                     if (token.withStack !== undefined) {

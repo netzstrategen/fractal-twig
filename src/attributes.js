@@ -181,22 +181,20 @@ class Attributes {
   static proxy(attributes) {
       return new Proxy(attributes, {
           get (target, name, receiver) {
-              if (!Reflect.has(target, name)) {
-                  // Check if getter is string.
-                  if (typeof name === 'string' && name.indexOf('get') !== -1) {
+              if (typeof name === 'string' && !Reflect.has(target, name)) {
+                  if (name.indexOf('get') !== -1) {
                       // Property names look like this:`isSrc`, `getSrc` so we need
                       // to strip the get prefix to obtain the correct attribute key.
                       name = name.replace('get', '').toLowerCase();
-                      // If the classes are requested, don't access the storage property.
+                      // Re-route into storage unless class property is requested.
                       if (name === 'class') {
                           name = 'classes';
                       }
-                      // Return key from storage property otherwise.
                       else {
                           target = target.storage;
                       }
                   }
-                  // Fail if property not exists on target.
+                  // Do not forward other property accesses and tests (like isset()).
                   else {
                       return undefined;
                   }
