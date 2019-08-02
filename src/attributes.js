@@ -140,7 +140,7 @@ class Attributes {
     static convert(context) {
         _.forEach(context, (value, name) => {
             if (typeof name === 'string' && name.indexOf('attributes') > -1) {
-                context[name] = new Attributes(value);
+                context[name] = this.proxy(new Attributes(value));
             }
             else if (_.isObject(value)) {
                 this.convert(value);
@@ -148,30 +148,61 @@ class Attributes {
         });
     };
 
-}
+    /**
+     * Serializes all attributes into an HTML element attributes string.
+     *
+     * The resulting string MUST start with a space, unless there are no attributes
+     * to serialize.
+     *
+     * @return string
+     */
+    toString() {
+        let string = '';
+        if (this.classes.length) {
+            string += ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
+        }
+        _.forEach(this.storage, function (value, name) {
+            if (value !== null) {
+                string += ` ${name}="${value}"`;
+            }
+            else {
+                string += ` ${name}`;
+            }
+        });
+        return string;
+    };
 
-/**
- * Serializes all attributes into an HTML element attributes string.
- *
- * The resulting string MUST start with a space, unless there are no attributes
- * to serialize.
- *
- * @return string
- */
-Attributes.prototype.toString = function () {
-    let string = '';
-    if (this.classes.length) {
-        string += ' class="' + _.join(_.uniq(this.classes), ' ') + '"';
+    /**
+     * Proxies direct accesses to attribute properties.
+     *
+     * @param attributes
+     * @returns {any|undefined}
+     */
+    static proxy(attributes) {
+        return new Proxy(attributes, {
+            get (target, name, receiver) {
+                if (typeof name === 'string' && !Reflect.has(target, name)) {
+                    if (name.indexOf('get') !== -1) {
+                        // Undo Twig's property name to method name conversion.
+                        name = name.replace('get', '').toLowerCase();
+                        // Re-route into storage unless class property is requested.
+                        if (name === 'class') {
+                            name = 'classes';
+                        }
+                        else {
+                            target = target.storage;
+                        }
+                    }
+                    // Do not forward other property accesses and tests (like isset()).
+                    else {
+                        return undefined;
+                    }
+                }
+                return Reflect.get(target, name, receiver);
+            }
+        });
     }
-    _.forEach(this.storage, function (value, name) {
-        if (value !== null) {
-            string += ` ${name}="${value}"`;
-        }
-        else {
-            string += ` ${name}`;
-        }
-    });
-    return string;
-};
+
+}
 
 module.exports = Attributes;
