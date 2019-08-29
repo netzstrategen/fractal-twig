@@ -103,6 +103,9 @@ class Attributes {
      * @return self
      */
     merge(attributes) {
+        if (typeof attributes !== 'object') {
+            return this;
+        }
         let self = this;
         if (attributes.constructor.name === 'Attributes') {
             this.classes = _.concat(this.classes, attributes.classes);
