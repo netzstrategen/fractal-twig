@@ -1,6 +1,6 @@
 {
   "name": "@netzstrategen/fractal-twig",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Twig template adapter for Fractal.",
   "main": "index.js",
   "repository": {
