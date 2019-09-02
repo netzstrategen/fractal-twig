@@ -109,7 +109,7 @@ class Attributes {
         let self = this;
         if (attributes.constructor.name === 'Attributes') {
             this.classes = _.concat(this.classes, attributes.classes);
-            // If null is passed, don't override default value.
+            // Filter out passed null values to prevent default overrides.
             attributes.storage = _.pickBy(attributes.storage, !_.isNull);
             _.merge(this.storage, attributes.storage);
         }
