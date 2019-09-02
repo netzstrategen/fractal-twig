@@ -103,7 +103,7 @@ module.exports = function(fractal){
                           // a component with dummy/faker data but without values for its
                           // child components, so that each component only generates its
                           // own dummy data.
-                          if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined' || passedArguments[name] === null) {
+                          if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined' || _.isNull(passedArguments[name])) {
                             return;
                           }
                           if (name.indexOf('attributes') > -1) {
