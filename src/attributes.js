@@ -110,9 +110,7 @@ class Attributes {
         if (attributes.constructor.name === 'Attributes') {
             this.classes = _.concat(this.classes, attributes.classes);
             // If null is passed, don't override default value.
-            attributes.storage = _.pickBy(attributes.storage, (value, key) => {
-                return value !== null;
-            });
+            attributes.storage = _.pickBy(attributes.storage, !_.isNull);
             _.merge(this.storage, attributes.storage);
         }
         else {
