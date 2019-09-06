@@ -188,7 +188,7 @@ class Attributes {
             get (target, name, receiver) {
                 if (typeof name === 'string' && !Reflect.has(target, name)) {
                     // Undo Twig's property name to method name conversion.
-                    name = name.replace('get', '').toLowerCase();
+                    name = name.replace(/^get/, '').toLowerCase();
                     // Re-route into storage unless class property is requested.
                     if (name === 'class') {
                         name = 'classes';
