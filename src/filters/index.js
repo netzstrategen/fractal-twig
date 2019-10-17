@@ -3,6 +3,9 @@ const _ = require('lodash');
 
 module.exports = function (fractal) {
     return {
+        trans(str) {
+            return str;
+        },
         t(str) {
             return str;
         },
