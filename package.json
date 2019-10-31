@@ -1,18 +1,18 @@
 {
-  "name": "@netzstrategen/twig-drupal-fractal-adapter",
+  "name": "@netzstrategen/fractal-twig-adapter",
   "version": "2.2.1",
   "description": "Twig template adapter for Fractal.",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/netzstrategen/twig-drupal"
+    "url": "https://github.com/netzstrategen/fractal-twig"
   },
   "author": "Fabian Marz <fabian@netzstrategen.com> (https://netzstrategen.com/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/netzstrategen/twig-drupal/issues"
+    "url": "https://github.com/netzstrategen/fractal-twig/issues"
   },
-  "homepage": "https://github.com/netzstrategen/twig-drupal",
+  "homepage": "https://github.com/netzstrategen/fractal-twig",
   "dependencies": {
     "@frctl/fractal": "latest",
     "callsites": "^3.1.0",
