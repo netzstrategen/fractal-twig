@@ -16,7 +16,7 @@ module.exports = function(fractal){
                  *
                  *  Format: {% render "template.twig" with {some: 'values'} %}
                  */
-                type: Twig.logic.type.include,
+                type: 'Twig.logic.type.render',
                 regex: /^render\s+(ignore missing\s+)?(.+?)\s*(?:with\s+([\S\s]+?))?\s*(only)?$/,
                 next: [],
                 open: true,
