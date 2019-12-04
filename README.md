@@ -13,7 +13,7 @@ composer require netzstrategen/drupal-twig_fractal
 ## Setup
 
 ```sh
-npm install --save git+ssh://git@github.com/netzstrategen/twig-drupal.git
+npm install --save git+ssh://git@github.com/netzstrategen/fractal-twig.git
 ```
 
 or add manually in your `package.json`:
@@ -21,7 +21,7 @@ or add manually in your `package.json`:
 ```json
 {
   "dependencies": {
-    "@frctl/twig-drupal": "git+ssh://git@github.com/netzstrategen/twig-drupal.git"
+    "@frctl/fractal-twig": "git+ssh://git@github.com/netzstrategen/fractal-twig.git"
   }
 }
 ```
@@ -30,7 +30,7 @@ in your `fractal.js`
 
 ```js
 const fractal = require('@frctl/fractal').create();
-const twigAdapter = require('@frctl/twig-drupal');
+const twigAdapter = require('@frctl/fractal-twig');
 fractal.components.engine(twigAdapter);
 ```
 
