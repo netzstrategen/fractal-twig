@@ -21,7 +21,7 @@ or add manually in your `package.json`:
 ```json
 {
   "dependencies": {
-    "@frctl/fractal-twig": "git+ssh://git@github.com/netzstrategen/fractal-twig.git"
+    "@netzstrategen/fractal-twig": "git+ssh://git@github.com/netzstrategen/fractal-twig.git"
   }
 }
 ```
@@ -30,7 +30,7 @@ in your `fractal.js`
 
 ```js
 const fractal = require('@frctl/fractal').create();
-const twigAdapter = require('@frctl/fractal-twig');
+const twigAdapter = require('@netzstrategen/fractal-twig');
 fractal.components.engine(twigAdapter);
 ```
 
