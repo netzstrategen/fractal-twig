@@ -53,6 +53,7 @@ module.exports = function(fractal){
                 },
 
                 parse: function (token, context, chain) {
+                    let state = this;
                     let components = fractal.components;
 
                     let file = Twig.expression.parse.apply(this, [token.stack, context]);
@@ -119,7 +120,7 @@ module.exports = function(fractal){
                         template = file;
                     }
                     else {
-                        template = this.importFile(file);
+                        template = state.template.importFile(file);
                     }
 
                     return {
