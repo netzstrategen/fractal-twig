@@ -142,7 +142,7 @@ module.exports = function(fractal){
                 },
                 parse: function (token, context, chain) {
                     var that = this;
-                    return Twig.parseAsync.call(that, token.output, context)
+                    return Twig.expression.parseAsync.call(that, token.output, context)
                     .then(function (value) {
                         var plural_token = false;
                         var plural_position = 0;
@@ -174,7 +174,7 @@ module.exports = function(fractal){
 
                         return {
                             chain: chain,
-                            output: Twig.parse.apply(that, [token.output, context])
+                            output: Twig.expression.parse.apply(that, [token.output, context])
                         };
                     });
                 }
