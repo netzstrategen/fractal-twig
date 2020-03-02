@@ -1,6 +1,7 @@
 'use strict';
 
 const callsites = require('callsites');
+const deepmerge = require('deepmerge');
 const fs = require('fs');
 const yaml = require('js-yaml');
 
@@ -39,6 +40,32 @@ class ComponentConfig {
       console.log(err.stack || String(err));
     }
   }
+
+  /**
+   * Merges the source element by the variant name into the destination array.
+   */
+  merge(destination = {}, source = {}, options) {
+    const defaults = {
+      customMerge: (key) => {
+        if (key !== 'variants') {
+          return;
+        }
+        return (destination, source) => {
+          source.forEach(sourceVariant => {
+            destination.forEach((destinationVariant, index) => {
+              if (destinationVariant.name === sourceVariant.name) {
+                destination[index] = deepmerge(destination[index], sourceVariant);
+              }
+            });
+          });
+          return destination;
+        }
+      },
+    };
+    options = options || defaults;
+    return deepmerge(destination, source, options)
+  }
+
 }
 
 module.exports = ComponentConfig;
