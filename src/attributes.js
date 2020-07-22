@@ -187,23 +187,25 @@ class Attributes {
         return new Proxy(attributes, {
             get (target, name, receiver) {
                 if (typeof name === 'string' && !Reflect.has(target, name)) {
-                    if (name.indexOf('get') !== -1) {
-                        // Undo Twig's property name to method name conversion.
-                        name = name.replace('get', '').toLowerCase();
-                        // Re-route into storage unless class property is requested.
-                        if (name === 'class') {
-                            name = 'classes';
-                        }
-                        else {
-                            target = target.storage;
-                        }
+                    // Undo Twig's property name to method name conversion.
+                    name = name.replace(/^get/, '').toLowerCase();
+                    // Re-route into storage unless class property is requested.
+                    if (name === 'class') {
+                        name = 'classes';
                     }
-                    // Do not forward other property accesses and tests (like isset()).
                     else {
-                        return undefined;
+                        target = target.storage;
                     }
                 }
                 return Reflect.get(target, name, receiver);
+            },
+            getOwnPropertyDescriptor(target, name) {
+                return {
+                    configurable: true,
+                    enumerable: true,
+                    writable: true,
+                    value: this.get(target, name),
+                };
             }
         });
     }
