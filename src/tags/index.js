@@ -153,16 +153,16 @@ module.exports = function (fractal) {
                         var plural_token = false;
                         var plural_position = 0;
                         fs.appendFile(
-                            require('os').homedir+"/fractal.output",
-                            "\n value: " + value +
-                            "\n Output: " + JSON.stringify(token.output),
+                            require('os').homedir + '/fractal.output',
+                            '\n value: ' + value +
+                            '\n Output: ' + JSON.stringify(token.output),
                                 (err) => {
                                     if (err) throw err;
-                                    console.log("updated");
+                                    console.log('updated');
                                 });
 
                             // Look for plural tag.
-                        let string_to_translate = "";
+                        let string_to_translate = '';
                         let is_raw_string = false;
                         let variables_in_string = [];
                         if (value === token.output[0].value) {
@@ -170,15 +170,15 @@ module.exports = function (fractal) {
                         }
                         for (let statement of token.output) {
                             plural_position++;
-                            if (statement.type === "logic" && statement.token.type === "plural") {
+                            if (statement.type === 'logic' && statement.token.type === 'plural') {
                                 plural_token = statement.token;
                                 break;
                             } else {
-                                if (statement.type === "raw") {
+                                if (statement.type === 'raw') {
                                     string_to_translate += statement.value;
                                 } else if (
                                     !is_raw_string &&
-                                    statement.type === "output" &&
+                                    statement.type === 'output' &&
                                     Array.isArray(statement.stack) &&
                                     statement.stack.length === 1 )
                                 {
@@ -189,7 +189,7 @@ module.exports = function (fractal) {
                             }
                        };
 
-                        if (plural_token !== false && typeof plural_token.match[1] === "string") {
+                        if (plural_token !== false && typeof plural_token.match[1] === 'string') {
                             // Evaluate plural variable.
                             var plural_check = Twig.expression.compile({
                                 type: Twig.expression.type.expression,
@@ -204,12 +204,12 @@ module.exports = function (fractal) {
                                 token.output = token.output.slice(plural_position, token.output.length);
                             }
                         }
-                        if (string_to_translate !== "") {
-                            const current_translation = po.translations[""][string_to_translate];
+                        if (string_to_translate !== '') {
+                            const current_translation = po.translations[''][string_to_translate];
                             if (current_translation != undefined) {
                                 if (is_raw_string) {
                                     token.output[0] = {
-                                            type: "raw",
+                                            type: 'raw',
                                             value: current_translation.msgstr[0],
                                         };
                                     } else {
@@ -255,22 +255,22 @@ module.exports = function (fractal) {
 function split_translation(translated_string, variables) {
     let return_array = [];
     const string_parts = translated_string
-        .split("%")
+        .split('%')
         .filter((str) => str !== "");
     string_parts.forEach((str) => {
         if (variables.includes(str)) {
             return_array.push({
-                type: "output",
+                type: 'output',
                 stack: [
                     {
-                        type: "Twig.expression.type.variable",
+                        type: 'Twig.expression.type.variable',
                         value: str,
                         match: [str],
                     },
                 ],
             });
         } else {
-            return_array.push({ type: "raw", value: str });
+            return_array.push({ type: 'raw', value: str });
         }
     });
 
