@@ -1,18 +1,17 @@
-"use strict";
+'use strict';
 
-const fractal = require("@frctl/fractal");
-const _ = require("lodash");
-const fs = require("fs");
-const po = require("gettext-parser").po.parse(
-    require("fs").readFileSync(
+const fractal = require('@frctl/fractal');
+const _ = require('lodash');
+const fs = require('fs');
+const po = require('gettext-parser').po.parse(
+    require('fs').readFileSync(
         `${__dirname}/../../../../../languages/de_DE/LC_MESSAGES/nepo.po`
     ),
-    "UTF-8"
+    'UTF-8'
 );
-const poTrans = require("gettext-parser").po.parse;
-const Path = require("path");
-const adapter = require("../adapter");
-const Attributes = require("../attributes");
+const Path = require('path');
+const adapter = require('../adapter');
+const Attributes = require('../attributes');
 
 module.exports = function (fractal) {
     return {
