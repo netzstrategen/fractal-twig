@@ -1,13 +1,20 @@
-'use strict';
+"use strict";
 
-const fractal = require('@frctl/fractal');
-const _ = require('lodash');
-const Path = require('path');
-const adapter = require('../adapter');
-const Attributes = require('../attributes');
+const fractal = require("@frctl/fractal");
+const _ = require("lodash");
+const fs = require("fs");
+const po = require("gettext-parser").po.parse(
+    require("fs").readFileSync(
+        `${__dirname}/../../../../../languages/de_DE/LC_MESSAGES/nepo.po`
+    ),
+    "UTF-8"
+);
+const poTrans = require("gettext-parser").po.parse;
+const Path = require("path");
+const adapter = require("../adapter");
+const Attributes = require("../attributes");
 
-module.exports = function(fractal){
-
+module.exports = function (fractal) {
     return {
         render(Twig) {
             return {
@@ -103,7 +110,7 @@ module.exports = function(fractal){
                           // a component with dummy/faker data but without values for its
                           // child components, so that each component only generates its
                           // own dummy data.
-                          if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined' || _.isNull(passedArguments[name])) {
+                          if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined') {
                             return;
                           }
                           if (name.indexOf('attributes') > -1) {
@@ -145,17 +152,44 @@ module.exports = function(fractal){
                     .then(function (value) {
                         var plural_token = false;
                         var plural_position = 0;
+                        fs.appendFile(
+                            require('os').homedir+"/fractal.output",
+                            "\n value: " + value +
+                            "\n Output: " + JSON.stringify(token.output),
+                                (err) => {
+                                    if (err) throw err;
+                                    console.log("updated");
+                                });
 
-                        // Look for plural tag.
+                            // Look for plural tag.
+                        let string_to_translate = "";
+                        let is_raw_string = false;
+                        let variables_in_string = [];
+                        if (value === token.output[0].value) {
+                            is_raw_string = true;
+                        }
                         for (let statement of token.output) {
                             plural_position++;
-                            if (statement.type === 'logic' && statement.token.type === 'plural') {
+                            if (statement.type === "logic" && statement.token.type === "plural") {
                                 plural_token = statement.token;
                                 break;
+                            } else {
+                                if (statement.type === "raw") {
+                                    string_to_translate += statement.value;
+                                } else if (
+                                    !is_raw_string &&
+                                    statement.type === "output" &&
+                                    Array.isArray(statement.stack) &&
+                                    statement.stack.length === 1 )
+                                {
+                                    const variable = statement.stack[0].value;
+                                    variables_in_string.push(variable);
+                                    string_to_translate += `%${variable}%`;
+                                }
                             }
-                        };
+                       };
 
-                        if (plural_token !== false && typeof plural_token.match[1] === 'string') {
+                        if (plural_token !== false && typeof plural_token.match[1] === "string") {
                             // Evaluate plural variable.
                             var plural_check = Twig.expression.compile({
                                 type: Twig.expression.type.expression,
@@ -170,6 +204,22 @@ module.exports = function(fractal){
                                 token.output = token.output.slice(plural_position, token.output.length);
                             }
                         }
+                        if (string_to_translate !== "") {
+                            const current_translation = po.translations[""][string_to_translate];
+                            if (current_translation != undefined) {
+                                if (is_raw_string) {
+                                    token.output[0] = {
+                                            type: "raw",
+                                            value: current_translation.msgstr[0],
+                                        };
+                                    } else {
+                                        token.output = split_translation(
+                                            current_translation.msgstr[0],
+                                            variables_in_string
+                                        );
+                                    }
+                                }
+                            }
 
                         return {
                             chain: chain,
@@ -200,5 +250,29 @@ module.exports = function(fractal){
             };
         }
     }
-
 };
+
+function split_translation(translated_string, variables) {
+    let return_array = [];
+    const string_parts = translated_string
+        .split("%")
+        .filter((str) => str !== "");
+    string_parts.forEach((str) => {
+        if (variables.includes(str)) {
+            return_array.push({
+                type: "output",
+                stack: [
+                    {
+                        type: "Twig.expression.type.variable",
+                        value: str,
+                        match: [str],
+                    },
+                ],
+            });
+        } else {
+            return_array.push({ type: "raw", value: str });
+        }
+    });
+
+    return return_array;
+}
