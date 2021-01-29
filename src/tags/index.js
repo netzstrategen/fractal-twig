@@ -3,17 +3,11 @@
 const fractal = require('@frctl/fractal');
 const _ = require('lodash');
 const fs = require('fs');
-const po = require('gettext-parser').po.parse(
-    require('fs').readFileSync(
-        `${__dirname}/../../../../../languages/de_DE/LC_MESSAGES/nepo.po`
-    ),
-    'UTF-8'
-);
 const Path = require('path');
 const adapter = require('../adapter');
 const Attributes = require('../attributes');
 
-module.exports = function (fractal) {
+module.exports = function (fractal, translator = undefined) {
     return {
         render(Twig) {
             return {
@@ -159,8 +153,7 @@ module.exports = function (fractal) {
                                     if (err) throw err;
                                     console.log('updated');
                                 });
-
-                            // Look for plural tag.
+                        const translation_active = translator !== undefined;
                         let string_to_translate = '';
                         let is_raw_string = false;
                         let variables_in_string = [];
@@ -168,25 +161,29 @@ module.exports = function (fractal) {
                             is_raw_string = true;
                         }
                         for (let statement of token.output) {
+                            // Look for plural tag.
                             plural_position++;
-                            if (statement.type === 'logic' && statement.token.type === 'plural') {
+                            if (
+                                statement.type === "logic" &&
+                                statement.token.type === "plural"
+                            ) {
                                 plural_token = statement.token;
                                 break;
-                            } else {
-                                if (statement.type === 'raw') {
+                            } else if(translation_active) {
+                                if (statement.type === "raw") {
                                     string_to_translate += statement.value;
                                 } else if (
                                     !is_raw_string &&
-                                    statement.type === 'output' &&
+                                    statement.type === "output" &&
                                     Array.isArray(statement.stack) &&
-                                    statement.stack.length === 1 )
-                                {
+                                    statement.stack.length === 1
+                                ) {
                                     const variable = statement.stack[0].value;
                                     variables_in_string.push(variable);
                                     string_to_translate += `%${variable}%`;
                                 }
                             }
-                       };
+                        };
 
                         if (plural_token !== false && typeof plural_token.match[1] === 'string') {
                             // Evaluate plural variable.
@@ -203,8 +200,8 @@ module.exports = function (fractal) {
                                 token.output = token.output.slice(plural_position, token.output.length);
                             }
                         }
-                        if (string_to_translate !== '') {
-                            const current_translation = po.translations[''][string_to_translate];
+                        if (translation_active && string_to_translate !== '') {
+                            const current_translation = translator.translations[''][string_to_translate];
                             if (current_translation != undefined) {
                                 if (is_raw_string) {
                                     token.output[0] = {

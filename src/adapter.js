@@ -322,7 +322,7 @@ module.exports = function(config) {
                     Twig.extendTest(name, test);
                 });
                 Twig.extend(function(Twig) {
-                    _.each(require('./tags')(app), function(tag){
+                    _.each(require('./tags')(app, config.translator), function(tag){
                         Twig.exports.extendTag(tag(Twig));
                     });
                 });
