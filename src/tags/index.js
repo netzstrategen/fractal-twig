@@ -7,7 +7,7 @@ const Path = require('path');
 const adapter = require('../adapter');
 const Attributes = require('../attributes');
 
-module.exports = function (fractal, translator = undefined) {
+module.exports = function (fractal) {
     return {
         render(Twig) {
             return {
@@ -103,7 +103,7 @@ module.exports = function (fractal, translator = undefined) {
                           // a component with dummy/faker data but without values for its
                           // child components, so that each component only generates its
                           // own dummy data.
-                          if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined') {
+                          if (!passedArguments.hasOwnProperty(name) || typeof passedArguments[name] === 'undefined' || _.isNull(passedArguments[name])) {
                             return;
                           }
                           if (name.indexOf('attributes') > -1) {
@@ -141,19 +141,24 @@ module.exports = function (fractal, translator = undefined) {
                 },
                 parse: function (token, context, chain) {
                     var that = this;
+                    const l18n = fractal.components.engine()._config.l18n || null;
+                    const parser = l18n.parser || null;
+                    const textdomain = l18n.textdomain || '';
                     return Twig.parseAsync.call(that, token.output, context)
                     .then(function (value) {
                         var plural_token = false;
                         var plural_position = 0;
-                        fs.appendFile(
-                            require('os').homedir + '/fractal.output',
-                            '\n value: ' + value +
-                            '\n Output: ' + JSON.stringify(token.output),
-                                (err) => {
-                                    if (err) throw err;
-                                    console.log('updated');
-                                });
-                        const translation_active = translator !== undefined;
+                        if (fractal.debug) {
+                            fs.appendFile(
+                                require('os').homedir + '/fractal.output',
+                                '\n value: ' + value +
+                                '\n Output: ' + JSON.stringify(token.output),
+                                    (err) => {
+                                        if (err) {
+                                            throw err;
+                                        }
+                                    });
+                        }
                         let string_to_translate = '';
                         let is_raw_string = false;
                         let variables_in_string = [];
@@ -169,7 +174,7 @@ module.exports = function (fractal, translator = undefined) {
                             ) {
                                 plural_token = statement.token;
                                 break;
-                            } else if(translation_active) {
+                            } else if (parser) {
                                 if (statement.type === "raw") {
                                     string_to_translate += statement.value;
                                 } else if (
@@ -200,17 +205,17 @@ module.exports = function (fractal, translator = undefined) {
                                 token.output = token.output.slice(plural_position, token.output.length);
                             }
                         }
-                        if (translation_active && string_to_translate !== '') {
-                            const current_translation = translator.translations[''][string_to_translate];
-                            if (current_translation != undefined) {
+                        if (parser && string_to_translate !== '' && parser.translations.hasOwnProperty(textdomain)) {
+                            const translation = parser.translations[textdomain][string_to_translate];
+                            if (translation != undefined) {
                                 if (is_raw_string) {
                                     token.output[0] = {
                                             type: 'raw',
-                                            value: current_translation.msgstr[0],
+                                            value: translation.msgstr[0],
                                         };
                                     } else {
                                         token.output = split_translation(
-                                            current_translation.msgstr[0],
+                                            translation.msgstr[0],
                                             variables_in_string
                                         );
                                     }
