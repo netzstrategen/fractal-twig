@@ -2,12 +2,12 @@
 
 const fractal = require('@frctl/fractal');
 const _ = require('lodash');
+const fs = require('fs');
 const Path = require('path');
 const adapter = require('../adapter');
 const Attributes = require('../attributes');
 
-module.exports = function(fractal){
-
+module.exports = function (fractal) {
     return {
         render(Twig) {
             return {
@@ -141,17 +141,41 @@ module.exports = function(fractal){
                 },
                 parse: function (token, context, chain) {
                     var that = this;
+                    const l18n = fractal.components.engine()._config.l18n || null;
+                    const parser = l18n.parser || null;
+                    const textdomain = l18n.textdomain || '';
                     return Twig.parseAsync.call(that, token.output, context)
                     .then(function (value) {
                         var plural_token = false;
                         var plural_position = 0;
-
-                        // Look for plural tag.
+                        let string_to_translate = '';
+                        let is_raw_string = false;
+                        let variables_in_string = [];
+                        if (value === token.output[0].value) {
+                            is_raw_string = true;
+                        }
                         for (let statement of token.output) {
+                            // Look for plural tag.
                             plural_position++;
-                            if (statement.type === 'logic' && statement.token.type === 'plural') {
+                            if (
+                                statement.type === "logic" &&
+                                statement.token.type === "plural"
+                            ) {
                                 plural_token = statement.token;
                                 break;
+                            } else if (parser) {
+                                if (statement.type === "raw") {
+                                    string_to_translate += statement.value;
+                                } else if (
+                                    !is_raw_string &&
+                                    statement.type === "output" &&
+                                    Array.isArray(statement.stack) &&
+                                    statement.stack.length === 1
+                                ) {
+                                    const variable = statement.stack[0].value;
+                                    variables_in_string.push(variable);
+                                    string_to_translate += `%${variable}%`;
+                                }
                             }
                         };
 
@@ -170,6 +194,22 @@ module.exports = function(fractal){
                                 token.output = token.output.slice(plural_position, token.output.length);
                             }
                         }
+                        if (parser && string_to_translate !== '' && parser.translations.hasOwnProperty(textdomain)) {
+                            const translation = parser.translations[textdomain][string_to_translate];
+                            if (translation != undefined) {
+                                if (is_raw_string) {
+                                    token.output[0] = {
+                                            type: 'raw',
+                                            value: translation.msgstr[0],
+                                        };
+                                    } else {
+                                        token.output = split_translation(
+                                            translation.msgstr[0],
+                                            variables_in_string
+                                        );
+                                    }
+                                }
+                            }
 
                         return {
                             chain: chain,
@@ -200,5 +240,29 @@ module.exports = function(fractal){
             };
         }
     }
-
 };
+
+function split_translation(translated_string, variables) {
+    let return_array = [];
+    const string_parts = translated_string
+        .split('%')
+        .filter((str) => str !== "");
+    string_parts.forEach((str) => {
+        if (variables.includes(str)) {
+            return_array.push({
+                type: 'output',
+                stack: [
+                    {
+                        type: 'Twig.expression.type.variable',
+                        value: str,
+                        match: [str],
+                    },
+                ],
+            });
+        } else {
+            return_array.push({ type: 'raw', value: str });
+        }
+    });
+
+    return return_array;
+}
