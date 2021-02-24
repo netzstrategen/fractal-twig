@@ -148,17 +148,6 @@ module.exports = function (fractal) {
                     .then(function (value) {
                         var plural_token = false;
                         var plural_position = 0;
-                        if (fractal.debug) {
-                            fs.appendFile(
-                                require('os').homedir + '/fractal.output',
-                                '\n value: ' + value +
-                                '\n Output: ' + JSON.stringify(token.output),
-                                    (err) => {
-                                        if (err) {
-                                            throw err;
-                                        }
-                                    });
-                        }
                         let string_to_translate = '';
                         let is_raw_string = false;
                         let variables_in_string = [];
